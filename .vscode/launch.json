@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/wangjien/Project/代码分享平台",
+      "program": "/Users/wangjien/Project/代码分享平台/build/Debug/outDebug"
+    }
+  ]
+}

@@ -1,0 +1,182 @@
+:root {
+  /* 现代配色方案 */
+  --primary-color: #409EFF;
+  --primary-dark: #337ecc;
+  --primary-light: #79bbff;
+  --secondary-color: #67C23A;
+  --accent-color: #E6A23C;
+  --danger-color: #F56C6C;
+  --text-color: #303133;
+  --text-light: #606266;
+  --text-muted: #909399;
+  --background-color: #f5f7fa;
+  --background-light: #fafafa;
+  --card-background: #ffffff;
+  --border-color: #EBEEF5;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei';
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text-color);
+  background-color: var(--background-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: var(--primary-color);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#app {
+  width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+button {
+  border-radius: 4px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.card {
+  padding: 1.5em;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* 代码块样式 */
+code {
+  background-color: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  background-color: #f0f2f5;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  #app {
+    padding: 1rem;
+  }
+  
+  .card {
+    padding: 1em;
+  }
+}
+
+/* 覆盖Element Plus默认样式，使其符合科研感配色 */
+.el-card {
+  background-color: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.el-button--primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.el-button--primary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.el-button--success {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.el-button--warning {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.el-input__inner {
+  border-radius: 4px;
+}
+
+.el-select__wrapper {
+  border-radius: 4px;
+}
+
+/* 标签样式 */
+.el-tag {
+  border-radius: 4px;
+}
+
+/* 表格样式 */
+.el-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 分页样式 */
+.el-pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
