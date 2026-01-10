@@ -232,9 +232,10 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString()
 }
 
-// 添加防抖搜索功能
+// 防抖搜索功能
 const debouncedSearch = debounce(() => {
-  handleSearch()
+  pagination.value.current_page = 1
+  fetchCodes()
 }, 500)
 
 // 设置排序方式
