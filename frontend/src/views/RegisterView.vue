@@ -83,11 +83,27 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Message, Lock, DataAnalysis, ArrowLeft } from '@element-plus/icons-vue'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import http, { useLoading } from '../utils/http'
+import { API_CONFIG } from '../config/api'
+import { validationRules, validateForm } from '../utils/validation'
+
+//======================================
+// Register View
+//
+// 注册页：创建新用户。
+// - 前端做基础校验（必填、两次密码一致、最小长度）
+// - 通过后端接口创建用户
+// - 成功后跳转登录页
+//
+// 关键点：
+// - 接口：POST /api/register
+// - UI loading：避免重复提交
+// - 注册成功不自动登录（当前逻辑是提示后跳登录）
+//======================================
 
 const router = useRouter()
-const loading = ref(false)
+const { loading, withLoading } = useLoading()
 
 // 注册表单
 const registerForm = ref({
@@ -97,27 +113,32 @@ const registerForm = ref({
   confirmPassword: ''
 })
 
+// 表单验证规则
+const registerRules = {
+  username: [validationRules.required('请输入用户名'), validationRules.username()],
+  email: [validationRules.required('请输入邮箱'), validationRules.email()],
+  password: [validationRules.required('请输入密码'), validationRules.password()],
+  confirmPassword: [validationRules.required('请确认密码')]
+}
+
 // 处理注册
 const handleRegister = async () => {
-  // 验证表单
-  if (!registerForm.value.username || !registerForm.value.email || !registerForm.value.password) {
-    ElMessage.warning('请填写所有必填字段')
+  // 表单验证
+  const { valid, errors } = validateForm(registerForm.value, registerRules)
+  if (!valid) {
+    const firstError = Object.values(errors)[0]
+    ElMessage.warning(firstError)
     return
   }
   
+  // 密码一致性校验
   if (registerForm.value.password !== registerForm.value.confirmPassword) {
     ElMessage.warning('两次输入的密码不一致')
     return
   }
   
-  if (registerForm.value.password.length < 6) {
-    ElMessage.warning('密码长度至少为6位')
-    return
-  }
-  
-  loading.value = true
-  try {
-    await axios.post('http://localhost:5001/api/register', {
+  await withLoading(async () => {
+    await http.post(API_CONFIG.endpoints.register, {
       username: registerForm.value.username,
       email: registerForm.value.email,
       password: registerForm.value.password
@@ -125,12 +146,7 @@ const handleRegister = async () => {
     
     ElMessage.success('注册成功，请登录')
     router.push('/login')
-  } catch (error: any) {
-    console.error('注册失败:', error)
-    ElMessage.error(error.response?.data?.message || '注册失败')
-  } finally {
-    loading.value = false
-  }
+  })
 }
 
 // 跳转到登录页面

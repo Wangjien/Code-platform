@@ -104,3 +104,49 @@ INSERT IGNORE INTO tags (name, description) VALUES
 ('聚类分析', '聚类分析算法'),
 ('差异表达', '差异表达分析'),
 ('功能富集', '功能富集分析');
+
+
+
+共发现{{总胚系变异}}个，其中：
+{%- if germval_class_var %}
+  {%- for category, count in germval_class_var.items() %}
+  - {{ category }}: {{ count }} 例
+  {%- endfor %}
+{%- else %}
+  - 无胚系变异分类数据
+{%- endif %}
+
+
+{% for variant in wes_variants %}
+{{ variant.基因 }}
+{{ variant.转录本 }}
+{{ variant.检测结果 }}
+{{ variant.亚区 }}
+{{ variant.突变丰度 }}
+{{ variant.突变类型 }}
+{{ variant.变异等级 }}
+{{ variant.肿瘤样本总reads覆盖 }}
+{{ variant.肿瘤样本变异reads覆盖 }}
+{% endfor %}
+
+
+{%tr for cnv in cnvs %}
+{{ cnv.基因 }}    {{ cnv.转录本 }}    {{ cnv.检测结果 }}    {{ cnv.亚区 }}    
+{{ cnv.30X覆盖率 }}    {{ cnv.100X覆盖率 }}    {{ cnv.正链reads数 }}    
+{{ cnv.负链reads数 }}    {{ cnv.链偏比例 }}
+{%tr endfor %}
+
+
+###### 药物
+{% for drug in snp_drugs %}
+基因：{{ drug.基因 }}
+检测位点：{{ drug.检测位点 }}
+检测结果：{{ drug.检测结果 }}
+药物：{{ drug.药物 }}
+用药提示：{{ drug.用药提示 }}
+证据等级：{{ drug.证据等级 }}
+{% endfor %}
+
+
+
+sk-0a4d2e4db320460c8314a49e45131114

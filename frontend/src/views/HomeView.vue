@@ -1,5 +1,5 @@
 <template>
-  <div class="home-container">
+  <div class="home-container" v-loading="loading" element-loading-text="加载中...">
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
@@ -44,6 +44,24 @@
             :label="category.name"
             :value="category.id"
           />
+        </el-select>
+        
+        <el-select 
+          v-model="searchForm.user_category_id" 
+          placeholder="个人分类" 
+          clearable 
+          class="filter-select" 
+          @change="handleSearch"
+          v-if="userCategories.length > 0"
+        >
+          <el-option
+            v-for="category in userCategories"
+            :key="category.id"
+            :label="category.name"
+            :value="category.id"
+          >
+            <span :style="{ color: category.color }">{{ category.name }}</span>
+          </el-option>
         </el-select>
         
         <el-button-group class="sort-buttons">
@@ -138,32 +156,51 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import http, { useLoading } from '../utils/http'
+import { API_CONFIG } from '../config/api'
 import { Clock, View, Star, UserFilled } from '@element-plus/icons-vue'
-import axios from 'axios'
 
-const router = useRouter()
+//======================================
+// Home View
+//
+// 首页：代码列表浏览与筛选。
+// - 支持分页：page/per_page
+// - 支持筛选：language/category_id
+// - 支持排序：recent/views/likes
+// - 通过路由 query 与筛选表单双向同步
+//
+// 关键点：
+// - 数据来源：后端 /api/codes、/api/categories
+// - 交互：筛选变化/分页变化会触发 fetchCodes
+// - 路由：MainLayout 的菜单/搜索会通过 query 驱动本页筛选
+//
+// 注意：
+// - 当前 axios 地址写死 localhost（建议后续抽到统一 api client）
+// - sort 参数在此文件中用于前端控制，但后端是否支持需要对应实现
+//======================================
+
 const route = useRoute()
+const router = useRouter()
+const { loading, withLoading } = useLoading()
 
 // 搜索表单
 const searchForm = ref({
   keyword: '',
   language: '',
-  category_id: ''
+  category_id: '',
+  user_category_id: ''
 })
 
 // 排序方式
 const sortBy = ref('recent')
 
-// 代码列表
+// 响应式数据
 const codes = ref<any[]>([])
-
-// 分类列表
 const categories = ref<any[]>([])
-
-// 分页信息
+const userCategories = ref<any[]>([])
 const pagination = ref({
   current_page: 1,
-  per_page: 12,
+  per_page: 10,
   total: 0,
   pages: 0
 })
@@ -218,17 +255,30 @@ const handleCurrentChange = (page: number) => {
 
 // 获取分类列表
 const fetchCategories = async () => {
-  try {
-    const response = await axios.get('http://localhost:5001/api/categories')
+  await withLoading(async () => {
+    const response = await http.get(API_CONFIG.endpoints.categories)
     categories.value = response.data
+  })
+}
+
+// 获取用户自定义分类列表
+const fetchUserCategories = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return // 未登录用户跳过
+    
+    const response = await http.get(API_CONFIG.endpoints.userCategories)
+    userCategories.value = response.data
   } catch (error) {
-    console.error('获取分类列表失败:', error)
+    // 静默失败，用户分类是可选功能
+    console.log('获取用户分类列表失败:', error)
   }
 }
 
 // 获取代码列表
 const fetchCodes = async () => {
-  try {
+  await withLoading(async () => {
+    // 组装分页 + 筛选参数（与后端 CodeList.get 对齐）
     const params: any = {
       page: pagination.value.current_page,
       per_page: pagination.value.per_page,
@@ -237,18 +287,18 @@ const fetchCodes = async () => {
     if (searchForm.value.keyword) params.keyword = searchForm.value.keyword
     if (searchForm.value.language) params.language = searchForm.value.language
     if (searchForm.value.category_id) params.category_id = searchForm.value.category_id
+    if (searchForm.value.user_category_id) params.user_category_id = searchForm.value.user_category_id
     
-    const response = await axios.get('http://localhost:5001/api/codes', { params })
+    const response = await http.get(API_CONFIG.endpoints.codes, { params })
     codes.value = response.data.codes
     pagination.value.total = response.data.total
     pagination.value.pages = response.data.pages
-  } catch (error) {
-    console.error('获取代码列表失败:', error)
-  }
+  })
 }
 
 // 监听路由查询参数变化
 watch(() => route.query, (query) => {
+  // 将 query 映射到表单，再触发拉取
   if (query.keyword) searchForm.value.keyword = query.keyword as string
   if (query.language) searchForm.value.language = query.language as string
   if (query.category_id) searchForm.value.category_id = query.category_id as string
@@ -258,6 +308,7 @@ watch(() => route.query, (query) => {
 // 页面挂载时获取数据
 onMounted(() => {
   fetchCategories()
+  fetchUserCategories()  // 获取用户自定义分类
 })
 </script>
 

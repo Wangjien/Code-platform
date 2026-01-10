@@ -46,6 +46,26 @@
             </el-select>
           </el-form-item>
           
+          <el-form-item label="个人分类">
+            <el-select 
+              v-model="publishForm.user_category_id" 
+              placeholder="选择个人分类（可选）"
+              clearable
+            >
+              <el-option
+                v-for="category in userCategories"
+                :key="category.id"
+                :label="category.name"
+                :value="category.id"
+              >
+                <span :style="{ color: category.color }">{{ category.name }}</span>
+              </el-option>
+            </el-select>
+            <div class="form-tip">
+              可在个人中心创建和管理自己的分类
+            </div>
+          </el-form-item>
+          
           <el-form-item label="开源协议">
             <el-select v-model="publishForm.license" placeholder="请选择开源协议">
               <el-option label="MIT" value="MIT" />
@@ -80,9 +100,7 @@
           </template>
           
           <el-form-item required>
-            <div v-loading="editorLoading" element-loading-text="编辑器加载中..." class="editor-wrapper">
-              <div ref="editorContainer" class="editor"></div>
-            </div>
+            <div ref="editorContainer" class="editor"></div>
           </el-form-item>
         </el-card>
         
@@ -102,10 +120,10 @@
           </el-form-item>
         </el-card>
         
-        <!-- 效果展示（可选） -->
+        <!-- 运行结果 -->
         <el-card shadow="hover" class="form-section">
           <template #header>
-            <div class="section-header">效果展示 <span class="optional-tag">(可选)</span></div>
+            <div class="section-header">运行结果</div>
           </template>
           
           <div class="results-section">
@@ -174,7 +192,7 @@
                     v-else-if="result.type === 'table'"
                     v-model="result.content"
                     type="textarea"
-                    placeholder='请输入表格JSON数据，格式：{columns: [...], data: [...]} 或CSV内容'
+                    placeholder="请输入表格JSON数据，格式：{columns: [...], data: [...]} 或CSV内容"
                     :rows="8"
                   />
                 </el-form-item>
@@ -200,19 +218,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Delete, Plus } from '@element-plus/icons-vue'
-import loader from '@monaco-editor/loader'
+import * as monaco from 'monaco-editor'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-// 配置 Monaco 编辑器 CDN 源
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-  }
-})
+//======================================
+// Code Publish View
+//
+// 发布页：创建新的代码分享。
+// - 基本信息：标题/描述/语言/分类/协议/标签
+// - 代码内容：Monaco Editor 编辑
+// - 运行结果：支持 image/text/chart/table（当前 image 仅本地预览 DataURL）
+// - 提交：POST /api/codes（需要 Bearer token）
+//
+// 关键点：
+// - 登录校验：提交前检查 localStorage token
+// - 表单校验：必填项、至少一个结果、结果内容非空
+// - 类型处理：category_id 提交时转为 number
+//
+// 注意：
+// - 图片上传目前未接入后端，仅生成本地 DataURL
+// - axios 地址写死 localhost，建议后续抽为统一配置
+//======================================
 
 const router = useRouter()
 
@@ -223,6 +253,7 @@ const publishForm = ref({
   content: '',
   language: 'Python',
   category_id: '',
+  user_category_id: null as number | null,  // 用户自定义分类ID
   license: 'MIT',
   environment: '',
   tags: [] as string[],
@@ -239,18 +270,17 @@ const publishForm = ref({
 // 分类列表
 const categories = ref<any[]>([])
 
+// 用户自定义分类列表
+const userCategories = ref<any[]>([])
+
 // 可用标签
 const availableTags = ref<any[]>([])
 
 // 提交状态
 const submitting = ref(false)
 
-// 编辑器加载状态
-const editorLoading = ref(true)
-
 // Monaco编辑器实例
-let editor: any = null
-let monacoInstance: any = null
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
 const editorContainer = ref<HTMLElement | null>(null)
 
 // 添加结果
@@ -269,16 +299,16 @@ const removeResult = (index: number) => {
 }
 
 // 处理图片上传
-const handleImageChange = (index: number, uploadFile: any) => {
+const handleImageChange = (index: number, file: any) => {
   // 这里可以实现图片上传到服务器的逻辑
   // 暂时使用本地URL
-  if (uploadFile && uploadFile.raw) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      publishForm.value.results[index].content = e.target?.result as string
-    }
-    reader.readAsDataURL(uploadFile.raw)
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const target = publishForm.value.results[index]
+    if (!target) return
+    target.content = e.target?.result as string
   }
+  reader.readAsDataURL(file.raw)
 }
 
 // 提交表单
@@ -307,13 +337,16 @@ const handleSubmit = async () => {
     return
   }
   
-  // 效果展示为可选，但如果添加了则必须填写内容
-  if (publishForm.value.results.length > 0) {
-    const hasEmptyResult = publishForm.value.results.some(result => !result.content.trim())
-    if (hasEmptyResult) {
-      ElMessage.error('已添加的效果展示必须填写内容')
-      return
-    }
+  if (publishForm.value.results.length === 0) {
+    ElMessage.error('请至少添加一个运行结果')
+    return
+  }
+  
+  // 验证每个结果都有内容
+  const hasEmptyResult = publishForm.value.results.some(result => !result.content.trim())
+  if (hasEmptyResult) {
+    ElMessage.error('所有结果都必须填写内容')
+    return
   }
   
   submitting.value = true
@@ -323,6 +356,7 @@ const handleSubmit = async () => {
     const submitData = {
       ...publishForm.value,
       category_id: parseInt(publishForm.value.category_id as string),
+      user_category_id: publishForm.value.user_category_id || undefined, // 可选的用户分类
       results: publishForm.value.results.map(result => ({
         type: result.type,
         description: result.description,
@@ -333,6 +367,7 @@ const handleSubmit = async () => {
     // 调用API发布代码
     const response = await axios.post('http://localhost:5001/api/codes', submitData, {
       headers: {
+        // 创建代码需要登录：使用 Bearer token
         Authorization: `Bearer ${token}`
       }
     })
@@ -353,39 +388,21 @@ const handleCancel = () => {
 }
 
 // 初始化编辑器
-const initEditor = async () => {
+const initEditor = () => {
   if (editorContainer.value) {
-    try {
-      monacoInstance = await loader.init()
-      editor = monacoInstance.editor.create(editorContainer.value, {
-        value: publishForm.value.content,
-        language: publishForm.value.language.toLowerCase(),
-        theme: 'vs-dark',
-        automaticLayout: true,
-        minimap: {
-          enabled: true
-        },
-        scrollBeyondLastLine: false,
-        fontSize: 14,
-        lineNumbers: 'on',
-        folding: true
-      })
-      editorLoading.value = false
-    } catch (error) {
-      console.error('Monaco 编辑器加载失败:', error)
-      editorLoading.value = false
-      ElMessage.error('代码编辑器加载失败，请刷新页面重试')
-    }
-  } else {
-    editorLoading.value = false
-  }
-}
-
-// 销毁编辑器
-const disposeEditor = () => {
-  if (editor) {
-    editor.dispose()
-    editor = null
+    editor = monaco.editor.create(editorContainer.value, {
+      value: publishForm.value.content,
+      language: publishForm.value.language.toLowerCase(),
+      theme: 'vs-dark',
+      automaticLayout: true,
+      minimap: {
+        enabled: true
+      },
+      scrollBeyondLastLine: false,
+      fontSize: 14,
+      lineNumbers: 'on',
+      folding: true
+    })
   }
 }
 
@@ -396,6 +413,21 @@ const fetchCategories = async () => {
     categories.value = response.data
   } catch (error) {
     console.error('获取分类列表失败:', error)
+  }
+}
+
+// 获取用户自定义分类列表
+const fetchUserCategories = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return // 未登录用户跳过
+    
+    const response = await axios.get('http://localhost:5001/api/user/categories', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    userCategories.value = response.data
+  } catch (error) {
+    console.error('获取用户分类列表失败:', error)
   }
 }
 
@@ -410,15 +442,11 @@ const fetchTags = async () => {
 }
 
 // 页面挂载时初始化
-onMounted(async () => {
+onMounted(() => {
   fetchCategories()
+  fetchUserCategories()  // 获取用户自定义分类
   fetchTags()
-  await initEditor()
-})
-
-// 组件卸载时销毁编辑器
-onBeforeUnmount(() => {
-  disposeEditor()
+  initEditor()
 })
 </script>
 
@@ -449,17 +477,6 @@ onBeforeUnmount(() => {
 .section-header {
   font-size: 16px;
   font-weight: bold;
-}
-
-.optional-tag {
-  font-size: 12px;
-  font-weight: normal;
-  color: #909399;
-}
-
-.editor-wrapper {
-  width: 100%;
-  min-height: 400px;
 }
 
 .editor {

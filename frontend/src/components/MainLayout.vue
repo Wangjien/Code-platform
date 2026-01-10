@@ -46,6 +46,9 @@
                 <el-dropdown-item command="favorites">
                   <el-icon><Star /></el-icon> 我的收藏
                 </el-dropdown-item>
+                <el-dropdown-item v-if="user?.role === 'admin'" command="admin">
+                  <el-icon><Monitor /></el-icon> 后台管理
+                </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon> 退出登录
                 </el-dropdown-item>
@@ -192,6 +195,24 @@ import {
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
+//======================================
+// Main Layout
+//
+// 该组件是“带导航 + 侧边栏”的主布局：
+// - 顶部：Logo、搜索框、发布入口、用户下拉菜单
+// - 侧边栏：分类、语言、热门/最新、热门标签
+// - 主内容区：<router-view /> 渲染具体页面
+//
+// 关键点：
+// - 登录态：当前基于 localStorage(token/user) 的轻量判断
+// - 导航：点击菜单通过 query 参数驱动首页筛选
+// - 数据：分类列表从后端 /api/categories 拉取
+//
+// 注意：
+// - 目前 axios baseURL 未抽取为统一配置，接口地址写死 localhost
+//   若后续要适配环境（dev/prod），建议集中到 api client 中管理。
+//======================================
+
 const router = useRouter()
 const route = useRoute()
 
@@ -217,6 +238,7 @@ const userStats = ref({
 })
 
 // 计算属性
+// isLoggedIn：仅用于 UI 展示；真实权限仍由后端 JWT 校验
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const user = computed(() => {
   const userStr = localStorage.getItem('user')
@@ -234,6 +256,7 @@ const goLogin = () => router.push('/login')
 const goRegister = () => router.push('/register')
 
 const handlePublish = () => {
+  // 发布页需要登录：未登录则提示并跳转登录
   if (!isLoggedIn.value) {
     ElMessage.warning('请先登录')
     router.push('/login')
@@ -249,10 +272,14 @@ const handleSearch = () => {
 const handleUserCommand = (command: string) => {
   switch (command) {
     case 'logout':
+      // 清理本地登录态
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       ElMessage.success('已退出登录')
       window.location.href = '/'
+      break
+    case 'admin':
+      router.push('/admin')
       break
     case 'profile':
       router.push('/profile')
@@ -271,6 +298,7 @@ const toggleSidebar = () => {
 }
 
 const handleMenuSelect = (index: string) => {
+  // 通过路由 query 驱动首页筛选/排序
   if (index === 'home') {
     router.push('/')
   } else if (index.startsWith('category-')) {

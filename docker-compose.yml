@@ -17,7 +17,7 @@ services:
   # 后端服务
   backend:
     build:
-      context: ./frontend/backend
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "5001:5001"

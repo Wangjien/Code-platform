@@ -63,11 +63,30 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message, Lock, DataAnalysis, ArrowLeft } from '@element-plus/icons-vue'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import http, { useLoading } from '../utils/http'
+import { API_CONFIG } from '../config/api'
+import { validationRules, validateForm } from '../utils/validation'
+
+//======================================
+// Login View
+//
+// 登录页：提交邮箱+密码到后端获取 JWT。
+// - 成功后将 token 与 user 写入 localStorage
+// - 然后跳转到首页
+//
+// 关键点：
+// - 接口：POST /api/login
+// - 登录态存储：localStorage(token/user)
+// - UI loading：避免重复提交
+//
+// 注意：
+// - localStorage 存储 token 有 XSS 风险（前端需保证不引入不可信脚本）。
+//   真正安全边界仍在后端 JWT 校验。
+//======================================
 
 const router = useRouter()
-const loading = ref(false)
+const { loading, withLoading } = useLoading()
 
 // 登录表单
 const loginForm = ref({
@@ -75,16 +94,24 @@ const loginForm = ref({
   password: ''
 })
 
+// 表单验证规则
+const loginRules = {
+  email: [validationRules.required('请输入邮箱'), validationRules.email()],
+  password: [validationRules.required('请输入密码'), validationRules.minLength(6)]
+}
+
 // 处理登录
 const handleLogin = async () => {
-  if (!loginForm.value.email || !loginForm.value.password) {
-    ElMessage.warning('请填写邮箱和密码')
+  // 表单验证
+  const { valid, errors } = validateForm(loginForm.value, loginRules)
+  if (!valid) {
+    const firstError = Object.values(errors)[0]
+    ElMessage.warning(firstError)
     return
   }
   
-  loading.value = true
-  try {
-    const response = await axios.post('http://localhost:5001/api/login', loginForm.value)
+  await withLoading(async () => {
+    const response = await http.post(API_CONFIG.endpoints.login, loginForm.value)
     
     // 保存token和用户信息
     localStorage.setItem('token', response.data.access_token)
@@ -92,12 +119,7 @@ const handleLogin = async () => {
     
     ElMessage.success('登录成功')
     router.push('/')
-  } catch (error: any) {
-    console.error('登录失败:', error)
-    ElMessage.error(error.response?.data?.message || '登录失败')
-  } finally {
-    loading.value = false
-  }
+  })
 }
 
 // 跳转到注册页面

@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-container">
+  <div class="profile-container" v-loading="loading" element-loading-text="加载中...">
     <!-- 用户信息卡片 -->
     <el-card shadow="hover" class="profile-card">
       <div class="profile-header">
@@ -98,6 +98,10 @@
           <el-empty v-else description="暂无收藏的代码" />
         </el-tab-pane>
         
+        <el-tab-pane label="分类管理" name="categories">
+          <UserCategoryManager />
+        </el-tab-pane>
+        
         <el-tab-pane label="账号设置" name="settings">
           <el-form :model="settingsForm" label-width="100px" class="settings-form">
             <el-form-item label="用户名">
@@ -144,9 +148,27 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserFilled, Edit, Delete, View, Star } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import axios from 'axios'
+import http, { useLoading } from '../utils/http'
+import { API_CONFIG } from '../config/api'
+import { validationRules, validateForm } from '../utils/validation'
+import UserCategoryManager from '../components/UserCategoryManager.vue'
+
+//======================================
+// Profile View
+//
+// 个人中心：展示用户信息，并提供“我的代码/我的收藏/账号设置”。
+// - 数据来源：localStorage(user) + 后端接口补充列表数据
+// - Tab：codes/favorites/settings
+// - 写操作：更新资料、修改密码、删除代码（都需要 token）
+//
+// 关键点：
+// - 登录态：页面加载时若 user 不存在则跳转登录
+// - 统计：通过 myCodes 聚合 likes/views 等数据
+// - 后端对齐：/api/user/favorites 当前后端是空实现（如果要展示收藏需要改后端）
+//======================================
 
 const router = useRouter()
+const { loading, withLoading } = useLoading()
 
 // 用户信息
 const user = computed(() => {
@@ -207,42 +229,19 @@ const getLanguageType = (language: string) => {
 
 // 获取我的代码
 const fetchMyCodes = async () => {
-  try {
-    const token = localStorage.getItem('token')
-    const response = await axios.get('http://localhost:5001/api/user/codes', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+  await withLoading(async () => {
+    const response = await http.get(API_CONFIG.endpoints.userCodes)
     myCodes.value = response.data.codes || response.data || []
-    userStats.value.codes = myCodes.value.length
-    
-    // 计算总浏览量和点赞
-    let totalViews = 0
-    let totalLikes = 0
-    myCodes.value.forEach((code: any) => {
-      totalViews += code.views || 0
-      totalLikes += code.likes || 0
-    })
-    userStats.value.views = totalViews
-    userStats.value.likes = totalLikes
-  } catch (error) {
-    console.error('获取我的代码失败:', error)
-    myCodes.value = []
-  }
+    updateUserStats()
+  })
 }
 
 // 获取我的收藏
 const fetchMyFavorites = async () => {
-  try {
-    const token = localStorage.getItem('token')
-    const response = await axios.get('http://localhost:5001/api/user/favorites', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+  await withLoading(async () => {
+    const response = await http.get(API_CONFIG.endpoints.userFavorites)
     myFavorites.value = response.data.favorites || response.data || []
-    userStats.value.favorites = myFavorites.value.length
-  } catch (error) {
-    console.error('获取收藏失败:', error)
-    myFavorites.value = []
-  }
+  })
 }
 
 // 切换标签页
@@ -269,7 +268,7 @@ const goPublish = () => {
 }
 
 // 编辑代码
-const editCode = (id: number) => {
+const editCode = (_id: number) => {
   ElMessage.info('编辑功能开发中...')
 }
 
@@ -282,16 +281,11 @@ const deleteCode = async (id: number) => {
       type: 'warning'
     })
     
-    const token = localStorage.getItem('token')
-    await axios.delete(`http://localhost:5001/api/codes/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    
+    await http.delete(API_CONFIG.endpoints.codeDetail(id))
     ElMessage.success('删除成功')
     fetchMyCodes()
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
   }
@@ -299,27 +293,43 @@ const deleteCode = async (id: number) => {
 
 // 保存设置
 const saveSettings = async () => {
-  try {
-    const token = localStorage.getItem('token')
-    await axios.put('http://localhost:5001/api/user/profile', settingsForm.value, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+  // 表单验证
+  const settingsRules = {
+    username: [validationRules.required('请输入用户名'), validationRules.username()],
+    email: [validationRules.required('请输入邮箱'), validationRules.email()]
+  }
+  
+  const { valid, errors } = validateForm(settingsForm.value, settingsRules)
+  if (!valid) {
+    const firstError = Object.values(errors)[0]
+    ElMessage.warning(firstError)
+    return
+  }
+  
+  await withLoading(async () => {
+    const response = await http.put(API_CONFIG.endpoints.userProfile, settingsForm.value)
     
     // 更新本地存储
     const updatedUser = { ...user.value, ...settingsForm.value }
     localStorage.setItem('user', JSON.stringify(updatedUser))
     
     ElMessage.success('保存成功')
-  } catch (error) {
-    console.error('保存失败:', error)
-    ElMessage.error('保存失败')
-  }
+  })
 }
 
 // 修改密码
 const changePassword = async () => {
-  if (!passwordForm.value.oldPassword || !passwordForm.value.newPassword) {
-    ElMessage.error('请填写密码')
+  // 表单验证
+  const passwordRules = {
+    oldPassword: [validationRules.required('请输入当前密码')],
+    newPassword: [validationRules.required('请输入新密码'), validationRules.password()],
+    confirmPassword: [validationRules.required('请确认密码')]
+  }
+  
+  const { valid, errors } = validateForm(passwordForm.value, passwordRules)
+  if (!valid) {
+    const firstError = Object.values(errors)[0]
+    ElMessage.warning(firstError)
     return
   }
   
@@ -328,21 +338,15 @@ const changePassword = async () => {
     return
   }
   
-  try {
-    const token = localStorage.getItem('token')
-    await axios.put('http://localhost:5001/api/user/password', {
+  await withLoading(async () => {
+    await http.put(API_CONFIG.endpoints.userPassword, {
       old_password: passwordForm.value.oldPassword,
       new_password: passwordForm.value.newPassword
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
     })
     
     ElMessage.success('密码修改成功')
     passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
-  } catch (error: any) {
-    console.error('修改密码失败:', error)
-    ElMessage.error(error.response?.data?.message || '修改密码失败')
-  }
+  })
 }
 
 // 页面加载时获取数据
@@ -465,6 +469,7 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }

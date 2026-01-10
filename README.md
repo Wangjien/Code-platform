@@ -2,6 +2,71 @@
 ![平台效果](imgs/image1.png)
 ![平台效果](imgs/image2.png)
 
+# 本地开发启动
+
+## 后端（Flask）
+
+后端目录：`backend/`
+
+```bash
+cd backend
+
+# 如已有 venv 可直接激活使用，否则建议新建 .venv
+python app.py
+```
+
+默认端口：`http://localhost:5001`
+
+## 前端（Vite + Vue3）
+
+前端目录：`frontend/`
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+默认地址：`http://localhost:5173`
+
+## 数据库迁移（SQLite，手动执行一次）
+
+当前项目使用 `db.create_all()`，它不会自动给已有表“加列”。
+如果你已经有历史数据库（例如 `backend/instance/bio_code_share.db`），在启用“后台管理 + 审核机制”前需要先手动迁移一次。
+
+打开 SQLite 并执行（仅一次）：
+
+```bash
+sqlite3 backend/instance/bio_code_share.db
+```
+
+在 sqlite 交互界面执行：
+
+```sql
+ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1;
+
+ALTER TABLE codes ADD COLUMN status VARCHAR(20) DEFAULT 'approved';
+ALTER TABLE codes ADD COLUMN reviewed_by INTEGER;
+ALTER TABLE codes ADD COLUMN reviewed_at DATETIME;
+ALTER TABLE codes ADD COLUMN review_reason TEXT;
+```
+
+说明：
+- `status`：`pending/approved/rejected/disabled`
+- 旧数据默认 `approved`，避免迁移后历史内容不可见
+
+## 初始化首个管理员（一次性）
+
+因为“后台提权(A3)”需要系统里先存在至少 1 个管理员，所以提供一个本地脚本用于初始化首个管理员。
+
+```bash
+python3 make_admin.py --email test@example.com
+```
+
+初始化后重新登录前端（刷新本地 `user` 信息），即可看到右上角下拉菜单的“后台管理”入口，或直接访问：
+
+`http://localhost:5173/admin`
+
 # Docker 部署指南
 ## 快速部署
 ### 1. 前置要求

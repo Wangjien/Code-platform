@@ -142,6 +142,24 @@ import axios from 'axios'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 
+//======================================
+// Code Detail View
+//
+// 代码详情页：展示代码元信息、代码内容、运行结果、评论。
+// - 代码展示：Monaco Editor（只读）
+// - 结果展示：image/text/chart/table（chart 使用 ECharts）
+// - 评论：GET 列表 + POST 新评论（需携带 token）
+//
+// 关键点：
+// - 路由参数：/code/:id
+// - API：GET /api/codes/:id、GET/POST /api/codes/:id/comments
+// - 资源释放：组件卸载时 dispose editor
+//
+// 注意：
+// - Monaco CDN 写死，离线或网络差时可能加载失败
+// - 图表初始化对 result.content(JSON) 有依赖，异常需 catch
+//======================================
+
 // 配置 Monaco 编辑器 CDN 源
 loader.config({
   paths: {
@@ -181,9 +199,6 @@ let editor: any = null
 let monacoInstance: any = null
 const editorContainer = ref<HTMLElement | null>(null)
 
-// 图表容器
-const chartContainer = ref<HTMLElement | null>(null)
-
 // 格式化日期
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -192,6 +207,7 @@ const formatDate = (dateString: string) => {
 
 // 处理复制代码
 const handleCopyCode = () => {
+  // 浏览器剪贴板 API：需要 HTTPS 或 localhost
   navigator.clipboard.writeText(code.value.content)
     .then(() => {
       ElMessage.success('代码已复制到剪贴板')
@@ -204,6 +220,7 @@ const handleCopyCode = () => {
 
 // 处理下载代码
 const handleDownloadCode = () => {
+  // 将文本内容生成 Blob 并触发下载
   const blob = new Blob([code.value.content], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -233,6 +250,7 @@ const handleSubmitComment = async () => {
       content: newComment.value
     }, {
       headers: {
+        // 评论接口需要登录：使用 Bearer token
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
     })
@@ -285,6 +303,7 @@ const disposeEditor = () => {
 
 // 初始化图表
 const initCharts = () => {
+  // 遍历 results，遇到 chart 类型则用 ECharts 渲染
   code.value.results.forEach((result: any) => {
     if (result.type === 'chart') {
       try {
@@ -304,14 +323,6 @@ const initCharts = () => {
       }
     }
   })
-}
-
-// 更新编辑器内容
-const updateEditorContent = () => {
-  if (editor && monacoInstance) {
-    editor.setValue(code.value.content)
-    monacoInstance.editor.setModelLanguage(editor.getModel()!, code.value.language.toLowerCase())
-  }
 }
 
 // 获取代码详情
