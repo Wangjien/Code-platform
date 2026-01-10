@@ -170,7 +170,7 @@ import { useRouter, useRoute } from 'vue-router'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
 import { cache, CACHE_KEYS, CACHE_TTL } from '../utils/cache'
-import { formatRelativeTime, getLanguageTagType, debounce } from '../utils/ui-helpers'
+import { debounce } from '../utils/ui-helpers'
 import { Star, View, Clock, RefreshLeft, UserFilled } from '@element-plus/icons-vue'
 
 //======================================
@@ -231,6 +231,11 @@ const formatDate = (dateString: string) => {
   if (days < 30) return `${Math.floor(days / 7)}周前`
   return date.toLocaleDateString()
 }
+
+// 添加防抖搜索功能
+const debouncedSearch = debounce(() => {
+  handleSearch()
+}, 500)
 
 // 设置排序方式
 const setSortBy = (sort: string) => {
