@@ -95,6 +95,7 @@ import { ElMessage, ElMessageBox, ElForm } from 'element-plus'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
 import { validationRules } from '../utils/validation'
+import { cache, CACHE_KEYS, CACHE_TTL } from '../utils/cache'
 
 // 响应式数据
 const { loading, withLoading } = useLoading()
@@ -134,11 +135,15 @@ const categoryRules = {
   ]
 }
 
-// 获取分类列表
+// 获取分类列表 (带缓存)
 const fetchCategories = async () => {
   await withLoading(async () => {
-    const response = await http.get(API_CONFIG.endpoints.userCategories)
-    categories.value = response.data
+    const cachedCategories = await cache.cacheRequest(
+      CACHE_KEYS.USER_CATEGORIES,
+      () => http.get(API_CONFIG.endpoints.userCategories).then(res => res.data),
+      CACHE_TTL.SHORT // 分类管理页面使用较短缓存时间，确保数据实时性
+    )
+    categories.value = cachedCategories
   })
 }
 
@@ -169,6 +174,9 @@ const deleteCategory = async (category: any) => {
     
     await http.delete(API_CONFIG.endpoints.userCategoryDetail(category.id))
     ElMessage.success('分类删除成功')
+    
+    // 清理缓存并重新获取数据
+    cache.delete(CACHE_KEYS.USER_CATEGORIES)
     fetchCategories()
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -205,6 +213,9 @@ const submitCategory = async () => {
     }
     
     showAddDialog.value = false
+    
+    // 清理缓存并重新获取数据
+    cache.delete(CACHE_KEYS.USER_CATEGORIES)
     fetchCategories()
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || '操作失败')

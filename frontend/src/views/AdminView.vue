@@ -137,7 +137,6 @@ import http from '../utils/http'
 import { API_CONFIG } from '../config/api'
 
 const router = useRouter()
-const loading = ref(false)
 
 const activeTab = ref<'users' | 'codes' | 'comments'>('users')
 

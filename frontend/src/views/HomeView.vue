@@ -165,12 +165,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
-import { Search, Plus, Star, View, Clock, RefreshLeft } from '@element-plus/icons-vue'
-import { Clock, View, Star, UserFilled } from '@element-plus/icons-vue'
+import { cache, CACHE_KEYS, CACHE_TTL } from '../utils/cache'
+import { formatRelativeTime, getLanguageTagType, debounce } from '../utils/ui-helpers'
+import { Star, View, Clock, RefreshLeft, UserFilled } from '@element-plus/icons-vue'
 
 //======================================
 // Home View
@@ -237,6 +238,24 @@ const setSortBy = (sort: string) => {
   fetchCodes()
 }
 
+// 判断是否有激活的筛选条件
+const hasActiveFilters = computed(() => {
+  return searchForm.value.keyword || 
+         searchForm.value.language || 
+         searchForm.value.category_id || 
+         searchForm.value.user_category_id
+})
+
+// 清空所有筛选条件
+const clearAllFilters = () => {
+  searchForm.value.keyword = ''
+  searchForm.value.language = ''
+  searchForm.value.category_id = ''
+  searchForm.value.user_category_id = ''
+  pagination.value.current_page = 1
+  fetchCodes()
+}
+
 // 处理搜索
 const handleSearch = () => {
   pagination.value.current_page = 1
@@ -265,22 +284,30 @@ const handleCurrentChange = (page: number) => {
   fetchCodes()
 }
 
-// 获取分类列表
+// 获取分类列表 (带缓存)
 const fetchCategories = async () => {
   await withLoading(async () => {
-    const response = await http.get(API_CONFIG.endpoints.categories)
-    categories.value = response.data
+    const cachedCategories = await cache.cacheRequest(
+      CACHE_KEYS.CATEGORIES,
+      () => http.get(API_CONFIG.endpoints.categories).then(res => res.data),
+      CACHE_TTL.LONG // 分类数据缓存15分钟
+    )
+    categories.value = cachedCategories
   })
 }
 
-// 获取用户自定义分类列表
+// 获取用户自定义分类列表 (带缓存)
 const fetchUserCategories = async () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) return // 未登录用户跳过
     
-    const response = await http.get(API_CONFIG.endpoints.userCategories)
-    userCategories.value = response.data
+    const cachedUserCategories = await cache.cacheRequest(
+      CACHE_KEYS.USER_CATEGORIES,
+      () => http.get(API_CONFIG.endpoints.userCategories).then(res => res.data),
+      CACHE_TTL.MEDIUM // 用户分类缓存5分钟
+    )
+    userCategories.value = cachedUserCategories
   } catch (error) {
     // 静默失败，用户分类是可选功能
     console.log('获取用户分类列表失败:', error)
