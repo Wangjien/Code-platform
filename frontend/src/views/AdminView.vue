@@ -230,19 +230,56 @@ const fetchCodes = async () => {
 
 const reviewCode = async (code: any, action: 'approve' | 'reject' | 'disable') => {
   try {
-    const reason = action === 'approve' ? '' : await ElMessageBox.prompt('请输入原因（可选）', '原因', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputPlaceholder: '原因可为空'
-    }).then(r => r.value).catch(() => '')
+    let reason = ''
+    
+    // 根据操作类型提供更友好的提示
+    if (action === 'reject') {
+      const result = await ElMessageBox.prompt(
+        `确定要拒绝代码 "${code.title}" 吗？请说明拒绝原因：`, 
+        '拒绝代码', {
+          confirmButtonText: '确定拒绝',
+          cancelButtonText: '取消',
+          inputPlaceholder: '请输入拒绝原因，帮助作者改进代码',
+          inputType: 'textarea'
+        }
+      )
+      reason = result.value || ''
+    } else if (action === 'disable') {
+      const result = await ElMessageBox.prompt(
+        `确定要禁用代码 "${code.title}" 吗？请说明禁用原因：`, 
+        '禁用代码', {
+          confirmButtonText: '确定禁用',
+          cancelButtonText: '取消',
+          inputPlaceholder: '请输入禁用原因（如违规内容等）',
+          inputType: 'textarea'
+        }
+      )
+      reason = result.value || ''
+    } else if (action === 'approve') {
+      await ElMessageBox.confirm(
+        `确定要通过代码 "${code.title}" 的审核吗？`, 
+        '通过审核', {
+          confirmButtonText: '确定通过',
+          cancelButtonText: '取消',
+          type: 'success'
+        }
+      )
+    }
 
     const res = await http.patch(API_CONFIG.endpoints.adminCodeReview(code.id), { action, reason })
-    ElMessage.success('操作成功')
+    
+    // 提供更具体的成功反馈
+    const actionText = action === 'approve' ? '通过审核' : action === 'reject' ? '已拒绝' : '已禁用'
+    ElMessage.success(`代码 "${code.title}" ${actionText}`)
+    
     const updated = res.data.code
     const idx = codes.value.findIndex(c => c.id === updated.id)
     if (idx >= 0) codes.value[idx] = updated
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || '操作失败')
+    if (e === 'cancel') return // 用户取消操作
+    
+    const actionText = action === 'approve' ? '审核' : action === 'reject' ? '拒绝' : '禁用'
+    ElMessage.error(`${actionText}操作失败: ${e.response?.data?.message || '未知错误'}`)
   }
 }
 

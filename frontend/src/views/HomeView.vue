@@ -25,6 +25,17 @@
     <!-- 筛选栏 -->
     <div class="filter-bar">
       <div class="filter-left">
+        <el-button 
+          type="primary" 
+          @click="clearAllFilters"
+          v-if="hasActiveFilters"
+          class="clear-filters-btn"
+          size="small"
+        >
+          <el-icon><RefreshLeft /></el-icon>
+          清空筛选
+        </el-button>
+        
         <el-select v-model="searchForm.language" placeholder="编程语言" clearable class="filter-select" @change="handleSearch">
           <el-option label="Python" value="Python">
             <span class="lang-option"><span class="lang-dot python"></span>Python</span>

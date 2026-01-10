@@ -1,5 +1,5 @@
 <template>
-  <div class="code-detail-container">
+  <div class="code-detail-container" v-loading="loading" element-loading-text="加载中...">
     <el-card shadow="hover" class="code-detail-card">
       <!-- 代码基本信息 -->
       <div class="code-info">
@@ -138,9 +138,10 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { DocumentCopy, Download, Star } from '@element-plus/icons-vue'
 import loader from '@monaco-editor/loader'
-import axios from 'axios'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import http, { useLoading } from '../utils/http'
+import { API_CONFIG } from '../config/api'
 
 //======================================
 // Code Detail View
@@ -169,6 +170,7 @@ loader.config({
 
 const route = useRoute()
 const codeId = Number(route.params.id)
+const { loading, withLoading } = useLoading()
 
 // 代码数据
 const code = ref<any>({
@@ -245,23 +247,15 @@ const handleSubmitComment = async () => {
     return
   }
   
-  try {
-    const response = await axios.post(`http://localhost:5001/api/codes/${codeId}/comments`, {
+  await withLoading(async () => {
+    const response = await http.post(API_CONFIG.endpoints.codeComments(codeId), {
       content: newComment.value
-    }, {
-      headers: {
-        // 评论接口需要登录：使用 Bearer token
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
     })
     
     comments.value.unshift(response.data)
     newComment.value = ''
     ElMessage.success('评论提交成功')
-  } catch (error: any) {
-    console.error('提交评论失败:', error)
-    ElMessage.error(error.response?.data?.message || '提交评论失败')
-  }
+  })
 }
 
 // 初始化Monaco编辑器
@@ -327,8 +321,8 @@ const initCharts = () => {
 
 // 获取代码详情
 const fetchCodeDetail = async () => {
-  try {
-    const response = await axios.get(`http://localhost:5001/api/codes/${codeId}`)
+  await withLoading(async () => {
+    const response = await http.get(API_CONFIG.endpoints.codeDetail(codeId))
     code.value = response.data
     
     // 初始化编辑器
@@ -341,15 +335,13 @@ const fetchCodeDetail = async () => {
     
     // 初始化图表
     initCharts()
-  } catch (error) {
-    console.error('获取代码详情失败:', error)
-  }
+  })
 }
 
 // 获取评论列表
 const fetchComments = async () => {
   try {
-    const response = await axios.get(`http://localhost:5001/api/codes/${codeId}/comments`)
+    const response = await http.get(API_CONFIG.endpoints.codeComments(codeId))
     comments.value = response.data
   } catch (error) {
     console.error('获取评论列表失败:', error)
