@@ -24,6 +24,8 @@ jwt_secret = os.getenv('JWT_SECRET_KEY')
 if not jwt_secret and not debug_mode:
     raise RuntimeError('JWT_SECRET_KEY must be set in non-debug environments')
 app.config['JWT_SECRET_KEY'] = jwt_secret or 'dev-secret-key'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # 开发环境不设置过期时间
+app.config['JWT_ERROR_MESSAGE_KEY'] = 'message'
 
 # 配置数据库
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'mysql+pymysql://root:password@localhost:3306/bio_code_share')
@@ -32,6 +34,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # 初始化扩展
 api = Api(app)
 jwt = JWTManager(app)
+
+# 初始化限流器
+from utils.rate_limiter import create_limiter
+limiter = create_limiter(app)
 
 # 导入数据库模型
 from models import db

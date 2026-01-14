@@ -8,6 +8,7 @@ from models.result import Result
 from models.tag import Tag
 from models.user import User
 from models import db
+from utils.cache import cached_response, CACHE_TTL, invalidate_cache
 
 #############################
 # Code API
@@ -35,6 +36,7 @@ class CodeList(Resource):
     # 性能说明：
     # - 使用预加载，避免序列化时产生大量额外 SQL
     #############################
+    @cached_response(ttl=CACHE_TTL['MEDIUM'], key_prefix="code_list")
     def get(self):
         # 获取代码列表，支持筛选和分页
         parser = reqparse.RequestParser()
@@ -81,14 +83,37 @@ class CodeList(Resource):
                 )
         
         if args['keyword']:
-            # 使用 LIKE 模糊匹配（注意：大数据量可能需要全文索引/搜索引擎支持）
-            pattern = f"%{args['keyword']}%"
-            query = query.filter(
-                or_(
-                    Code.title.like(pattern),
-                    Code.description.like(pattern),
+            # 优化搜索：使用多种搜索策略
+            keyword = args['keyword'].strip()
+            if len(keyword) >= 2:  # 避免过短关键词
+                # 1. 精确匹配优先级最高
+                exact_condition = or_(
+                    Code.title == keyword,
+                    Code.description.contains(keyword)
                 )
-            )
+                
+                # 2. 前缀匹配
+                prefix_condition = or_(
+                    Code.title.like(f"{keyword}%"),
+                    Code.description.like(f"{keyword}%")
+                )
+                
+                # 3. 包含匹配（原LIKE逻辑）
+                contains_condition = or_(
+                    Code.title.like(f"%{keyword}%"),
+                    Code.description.like(f"%{keyword}%")
+                )
+                
+                # 组合查询条件，按优先级排序
+                query = query.filter(or_(exact_condition, prefix_condition, contains_condition))
+            else:
+                # 短关键词只做精确匹配
+                query = query.filter(
+                    or_(
+                        Code.title.contains(keyword),
+                        Code.description.contains(keyword)
+                    )
+                )
         
         if args['language']:
             query = query.filter_by(language=args['language'])

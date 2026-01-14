@@ -142,6 +142,7 @@
                     <el-option label="文本" value="text" />
                     <el-option label="图表" value="chart" />
                     <el-option label="表格" value="table" />
+                    <el-option label="Markdown文档" value="markdown" />
                   </el-select>
                 </el-form-item>
                 
@@ -195,6 +196,23 @@
                     placeholder="请输入表格JSON数据，格式：{columns: [...], data: [...]} 或CSV内容"
                     :rows="8"
                   />
+                  
+                  <!-- Markdown结果 -->
+                  <div v-else-if="result.type === 'markdown'" class="result-content-markdown">
+                    <el-tabs type="border-card">
+                      <el-tab-pane label="编辑" name="edit">
+                        <el-input
+                          v-model="result.content"
+                          type="textarea"
+                          placeholder="请输入Markdown内容，支持标准Markdown语法"
+                          :rows="12"
+                        />
+                      </el-tab-pane>
+                      <el-tab-pane label="预览" name="preview">
+                        <div class="markdown-preview" v-html="renderMarkdown(result.content)"></div>
+                      </el-tab-pane>
+                    </el-tabs>
+                  </div>
                 </el-form-item>
               </el-card>
             </div>
@@ -222,8 +240,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Delete, Plus } from '@element-plus/icons-vue'
 import * as monaco from 'monaco-editor'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import http from '../utils/http'
+import { API_CONFIG } from '../config/api'
+import { marked } from 'marked'
 
 //======================================
 // Code Publish View
@@ -241,7 +261,7 @@ import { ElMessage } from 'element-plus'
 //
 // 注意：
 // - 图片上传目前未接入后端，仅生成本地 DataURL
-// - axios 地址写死 localhost，建议后续抽为统一配置
+// - 已使用统一的HTTP工具和API配置，支持自动JWT认证
 //======================================
 
 const router = useRouter()
@@ -296,6 +316,20 @@ const addResult = () => {
 // 删除结果
 const removeResult = (index: number) => {
   publishForm.value.results.splice(index, 1)
+}
+
+// 渲染Markdown内容
+const renderMarkdown = (content: string) => {
+  if (!content) return ''
+  try {
+    return marked(content, {
+      breaks: true,
+      gfm: true
+    })
+  } catch (error) {
+    console.error('Markdown渲染失败:', error)
+    return '<p>Markdown渲染失败</p>'
+  }
 }
 
 // 处理图片上传
@@ -365,12 +399,7 @@ const handleSubmit = async () => {
     }
     
     // 调用API发布代码
-    const response = await axios.post('http://localhost:5001/api/codes', submitData, {
-      headers: {
-        // 创建代码需要登录：使用 Bearer token
-        Authorization: `Bearer ${token}`
-      }
-    })
+    const response = await http.post(API_CONFIG.endpoints.codes, submitData)
     
     ElMessage.success('代码发布成功')
     router.push(`/code/${response.data.id}`)
@@ -409,7 +438,7 @@ const initEditor = () => {
 // 获取分类列表
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://localhost:5001/api/categories')
+    const response = await http.get(API_CONFIG.endpoints.categories)
     categories.value = response.data
   } catch (error) {
     console.error('获取分类列表失败:', error)
@@ -422,19 +451,22 @@ const fetchUserCategories = async () => {
     const token = localStorage.getItem('token')
     if (!token) return // 未登录用户跳过
     
-    const response = await axios.get('http://localhost:5001/api/user/categories', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const response = await http.get(API_CONFIG.endpoints.userCategories)
     userCategories.value = response.data
-  } catch (error) {
-    console.error('获取用户分类列表失败:', error)
+  } catch (error: any) {
+    console.error('获取用户分类失败:', error)
+    // Token过期时清除认证信息
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    }
   }
 }
 
 // 获取标签列表
 const fetchTags = async () => {
   try {
-    const response = await axios.get('http://localhost:5001/api/tags')
+    const response = await http.get(API_CONFIG.endpoints.tags)
     availableTags.value = response.data
   } catch (error) {
     console.error('获取标签列表失败:', error)
@@ -514,5 +546,156 @@ onMounted(() => {
   justify-content: center;
   gap: 20px;
   margin-top: 20px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .code-publish-container {
+    padding: 10px;
+  }
+  
+  .publish-card {
+    padding: 15px;
+  }
+  
+  .form-section {
+    margin-bottom: 15px;
+  }
+  
+  .editor {
+    height: 300px; /* 移动端降低编辑器高度 */
+  }
+  
+  .results-section {
+    gap: 10px;
+  }
+  
+  .result-item {
+    margin-bottom: 10px;
+  }
+  
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .form-actions .el-button {
+    width: 100%;
+  }
+  
+  /* 结果类型选择在移动端占满宽度 */
+  .el-select {
+    width: 100%;
+  }
+  
+  /* textarea在移动端减少行数 */
+  .el-textarea .el-textarea__inner {
+    min-height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .code-publish-container {
+    padding: 5px;
+  }
+  
+  .publish-card {
+    padding: 10px;
+  }
+  
+  .card-header {
+    font-size: 18px;
+  }
+  
+  .section-header {
+    font-size: 14px;
+  }
+  
+  .editor {
+    height: 250px;
+  }
+}
+
+.result-content-markdown {
+  width: 100%;
+}
+
+.markdown-preview {
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 15px;
+  background-color: white;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  line-height: 1.6;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin: 20px 0 10px 0;
+  font-weight: 600;
+}
+
+.markdown-preview h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 10px;
+}
+
+.markdown-preview h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 8px;
+}
+
+.markdown-preview pre {
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  margin: 10px 0;
+}
+
+.markdown-preview code {
+  background-color: #f6f8fa;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.markdown-preview blockquote {
+  border-left: 4px solid #dfe2e5;
+  padding-left: 16px;
+  margin-left: 0;
+  color: #6a737d;
+}
+
+.markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.markdown-preview table th,
+.markdown-preview table td {
+  border: 1px solid #dfe2e5;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-preview table th {
+  background-color: #f6f8fa;
+  font-weight: 600;
 }
 </style>

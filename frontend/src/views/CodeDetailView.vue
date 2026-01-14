@@ -18,9 +18,18 @@
           <el-button type="primary" @click="handleCopyCode">
             <el-icon><DocumentCopy /></el-icon> 复制代码
           </el-button>
-          <el-button @click="handleDownloadCode">
-            <el-icon><Download /></el-icon> 下载代码
-          </el-button>
+          <el-dropdown @command="handleExportCode">
+            <el-button>
+              <el-icon><Download /></el-icon> 导出代码 <el-icon><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="source">源码文件 (.py/.js/.r)</el-dropdown-item>
+                <el-dropdown-item command="markdown">Markdown格式 (.md)</el-dropdown-item>
+                <el-dropdown-item command="json">JSON数据 (.json)</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-button type="success" @click="handleLike">
             <el-icon><Star /></el-icon> 点赞 ({{ code.likes }})
           </el-button>
@@ -82,6 +91,11 @@
                     />
                   </el-table>
                 </div>
+                
+                <!-- Markdown结果 -->
+                <div v-else-if="result.type === 'markdown'" class="result-markdown">
+                  <div class="markdown-content" v-html="renderMarkdownContent(result.content)"></div>
+                </div>
               </el-tab-pane>
             </el-tabs>
           </div>
@@ -136,12 +150,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { DocumentCopy, Download, Star } from '@element-plus/icons-vue'
+import { DocumentCopy, Download, Star, ArrowDown } from '@element-plus/icons-vue'
+import { exportSingleCode, ExportFormat } from '../utils/export'
 import loader from '@monaco-editor/loader'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
+import { renderMarkdown } from '../utils/markdown'
+import '../styles/markdown.css'
 
 //======================================
 // Code Detail View
@@ -207,6 +224,22 @@ const formatDate = (dateString: string) => {
   return date.toLocaleString()
 }
 
+// 渲染Markdown内容
+const renderMarkdownContent = (content: string) => {
+  if (!content) return ''
+  try {
+    const { html } = renderMarkdown(content, {
+      enableTOC: true,
+      enableMermaid: true,
+      enableMath: true
+    })
+    return html
+  } catch (error) {
+    console.error('Markdown渲染失败:', error)
+    return '<p>Markdown渲染失败</p>'
+  }
+}
+
 // 处理复制代码
 const handleCopyCode = () => {
   // 浏览器剪贴板 API：需要 HTTPS 或 localhost
@@ -220,25 +253,57 @@ const handleCopyCode = () => {
     })
 }
 
-// 处理下载代码
-const handleDownloadCode = () => {
-  // 将文本内容生成 Blob 并触发下载
-  const blob = new Blob([code.value.content], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${code.value.title}.${code.value.language.toLowerCase()}`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+// 处理导出代码
+const handleExportCode = async (format: string) => {
+  if (!code.value || !code.value.content) {
+    ElMessage.warning('代码内容为空，无法导出')
+    return
+  }
+
+  // 将代码数据转换为导出格式需要的结构
+  const exportData = {
+    id: code.value.id,
+    title: code.value.title,
+    description: code.value.description,
+    content: code.value.content,
+    language: code.value.language,
+    author: {
+      username: code.value.author_username
+    },
+    created_at: code.value.created_at,
+    tags: code.value.tags?.map((tag: string) => ({ name: tag })) || []
+  }
+
+  try {
+    let exportFormat: ExportFormat
+    switch (format) {
+      case 'source':
+        exportFormat = ExportFormat.SOURCE
+        break
+      case 'markdown':
+        exportFormat = ExportFormat.MARKDOWN
+        break
+      case 'json':
+        exportFormat = ExportFormat.JSON
+        break
+      default:
+        exportFormat = ExportFormat.SOURCE
+    }
+
+    await exportSingleCode(exportData, exportFormat)
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请重试')
+  }
 }
 
 // 处理点赞
 const handleLike = () => {
   code.value.likes++
-  // 这里调用后端API更新点赞数
-  console.log('点赞:', code.value.id)
+  // TODO: 调用后端API更新点赞数
+  if (import.meta.env.DEV) {
+    console.log('点赞:', code.value.id)
+  }
 }
 
 // 处理提交评论
@@ -373,6 +438,40 @@ watch(() => code.value.content, (newContent) => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .code-detail-container {
+    padding: 10px;
+  }
+  
+  .code-meta {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+  }
+  
+  .code-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .code-content-container {
+    flex-direction: column;
+  }
+  
+  .editor {
+    height: 300px; /* 移动端降低编辑器高度 */
+  }
+  
+  .result-image {
+    height: 250px;
+  }
+  
+  .result-chart {
+    height: 250px;
+  }
 }
 
 .code-detail-card {
@@ -547,5 +646,112 @@ watch(() => code.value.content, (newContent) => {
 .comment-content {
   font-size: 14px;
   line-height: 1.5;
+}
+
+.result-markdown {
+  width: 100%;
+  min-height: 300px;
+  background-color: white;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.markdown-content {
+  padding: 20px;
+  line-height: 1.6;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: 20px 0 10px 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.markdown-content h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 10px;
+}
+
+.markdown-content h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 8px;
+}
+
+.markdown-content pre {
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  margin: 10px 0;
+  border: 1px solid #e1e4e8;
+}
+
+.markdown-content code {
+  background-color: #f6f8fa;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #dfe2e5;
+  padding-left: 16px;
+  margin-left: 0;
+  color: #6a737d;
+  margin: 16px 0;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+  border: 1px solid #dfe2e5;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-content table th {
+  background-color: #f6f8fa;
+  font-weight: 600;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 2em;
+  margin: 16px 0;
+}
+
+.markdown-content li {
+  margin: 8px 0;
+}
+
+.markdown-content p {
+  margin: 16px 0;
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 10px 0;
 }
 </style>

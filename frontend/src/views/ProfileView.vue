@@ -38,6 +38,21 @@
     <el-card shadow="hover" class="content-card">
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
         <el-tab-pane label="我的代码" name="codes">
+          <div class="codes-header" v-if="myCodes.length > 0">
+            <el-dropdown @command="handleBatchExport">
+              <el-button type="primary">
+                <el-icon><Download /></el-icon> 批量导出 <el-icon><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="source">源码文件打包 (.zip)</el-dropdown-item>
+                  <el-dropdown-item command="markdown">Markdown格式 (.zip)</el-dropdown-item>
+                  <el-dropdown-item command="json">JSON数据 (.zip)</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <span class="codes-count">共 {{ myCodes.length }} 个代码</span>
+          </div>
           <div v-if="myCodes.length > 0" class="code-list">
             <el-card 
               v-for="code in myCodes" 
@@ -146,7 +161,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { UserFilled, Edit, Delete, View, Star } from '@element-plus/icons-vue'
+import { Star, UserFilled, Download, ArrowDown } from '@element-plus/icons-vue'
+import { exportMultipleCodes, ExportFormat } from '../utils/export'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
@@ -231,8 +247,8 @@ const getLanguageType = (language: string) => {
 const fetchMyCodes = async () => {
   await withLoading(async () => {
     const response = await http.get(API_CONFIG.endpoints.userCodes)
-    myCodes.value = response.data.codes || response.data || []
-    updateUserStats()
+    myCodes.value = response.data
+    userStats.value.codes = myCodes.value.length
   })
 }
 
@@ -265,6 +281,40 @@ const goToCode = (id: number) => {
 // 跳转到发布页
 const goPublish = () => {
   router.push('/publish')
+}
+
+// 处理批量导出
+const handleBatchExport = async (format: string) => {
+  if (myCodes.value.length === 0) {
+    ElMessage.warning('没有可导出的代码')
+    return
+  }
+
+  try {
+    let exportFormat: ExportFormat
+    switch (format) {
+      case 'source':
+        exportFormat = ExportFormat.SOURCE
+        break
+      case 'markdown':
+        exportFormat = ExportFormat.MARKDOWN
+        break
+      case 'json':
+        exportFormat = ExportFormat.JSON
+        break
+      default:
+        exportFormat = ExportFormat.SOURCE
+    }
+
+    await exportMultipleCodes(
+      myCodes.value, 
+      exportFormat, 
+      `我的代码_${user.value?.username || 'user'}`
+    )
+  } catch (error) {
+    console.error('批量导出失败:', error)
+    ElMessage.error('批量导出失败，请重试')
+  }
 }
 
 // 编辑代码
@@ -417,9 +467,24 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #409EFF;
+  font-size: 24px;
+  font-weight: bold;
+  color: #409eff;
+}
+
+.codes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.codes-count {
+  color: #666;
+  font-size: 14px;
 }
 
 .stat-label {

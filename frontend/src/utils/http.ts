@@ -33,7 +33,10 @@ http.interceptors.response.use(
     return response
   },
   (error: AxiosError<any>) => {
-    console.error('API Error:', error)
+    // 生产环境使用结构化日志，开发环境保留console
+    if (import.meta.env.DEV) {
+      console.error('API Error:', error)
+    }
     
     // 处理 401 未授权 - 自动跳转登录
     if (error.response?.status === 401) {

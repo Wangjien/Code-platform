@@ -7,12 +7,14 @@ FilePath: /代码分享平台/backend/resources/user.py
 Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 '''
 from flask_restful import Resource, reqparse
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
+from werkzeug.security import check_password_hash
 from flask import current_app
-from sqlalchemy.orm import joinedload, selectinload
 from models.user import User
 from models.code import Code
+from models.favorite import Favorite
 from models import db
+from utils.rate_limiter import RATE_LIMITS
 
 #############################
 # User API
@@ -36,6 +38,12 @@ class UserRegister(Resource):
     # 用户注册：校验 username/email 唯一性后创建用户。
     #############################
     def post(self):
+        # 应用限流：注册接口每分钟最多10次
+        from flask import current_app
+        limiter = current_app.extensions.get('limiter')
+        if limiter:
+            limiter.limit(RATE_LIMITS['auth'])(lambda: None)()
+        
         parser = reqparse.RequestParser()
         parser.add_argument('username', type=str, required=True, help='Username is required')
         parser.add_argument('email', type=str, required=True, help='Email is required')

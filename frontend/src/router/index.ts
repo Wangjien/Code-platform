@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import CodeDetailView from '../views/CodeDetailView.vue'
 import CodePublishView from '../views/CodePublishView.vue'
+import PublishModeSelect from '../views/PublishModeSelect.vue'
+import MarkdownPublishView from '../views/MarkdownPublishView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ProfileView from '../views/ProfileView.vue'
@@ -37,8 +39,24 @@ const router = createRouter({
     },
     {
       path: '/publish',
+      name: 'publish-mode-select',
+      component: PublishModeSelect,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/publish/traditional',
       name: 'code-publish',
       component: CodePublishView,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/publish/markdown',
+      name: 'markdown-publish',
+      component: MarkdownPublishView,
       meta: {
         requiresAuth: true
       }
