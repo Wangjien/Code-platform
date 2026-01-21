@@ -1,57 +1,106 @@
 version: '3.8'
 
 services:
-  # 前端服务
-  frontend:
+  # 完整应用服务（前端+后端）
+  app:
     build:
-      context: ./frontend
+      context: .
       dockerfile: Dockerfile
     ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  # 后端服务
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5001:5001"
+      - "8080:80"
     environment:
+      # 基础配置
       - FLASK_ENV=production
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - SECRET_KEY=${SECRET_KEY:-your-app-secret-key}
+      
+      # 数据库配置（选择其一）
+      # SQLite（默认，适合小规模）
       - DATABASE_URI=sqlite:///instance/bio_code_share.db
+      
+      # MySQL（生产环境推荐）
+      # - DATABASE_URI=mysql+pymysql://app_user:${DB_PASSWORD:-apppassword}@mysql:3306/bio_code_share
+      
+      # 缓存配置
+      - REDIS_URL=redis://redis:6379/0
+      
+      # 其他配置
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
     volumes:
-      - backend-data:/app/instance
+      - app_data:/app/backend/instance
+      - app_logs:/app/backend/logs
+    depends_on:
+      - redis
+      # - mysql  # 如果使用MySQL则取消注释
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # 可选: MySQL 数据库 (取消注释以使用 MySQL)
-  # mysql:
-  #   image: mysql:8.0
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
-  #     MYSQL_DATABASE: bio_code_share
-  #     MYSQL_USER: ${MYSQL_USER:-biocode}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-biocode123}
-  #   volumes:
-  #     - mysql-data:/var/lib/mysql
-  #   ports:
-  #     - "3306:3306"
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
+  # Redis缓存服务
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # MySQL数据库（可选，生产环境推荐）
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootpassword}
+      - MYSQL_DATABASE=bio_code_share
+      - MYSQL_USER=app_user
+      - MYSQL_PASSWORD=${DB_PASSWORD:-apppassword}
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Nginx反向代理（可选，多实例部署）
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - app-network
+    restart: unless-stopped
+    profiles: ["production"]  # 仅在production profile时启动
+
+volumes:
+  app_data:
+    driver: local
+  app_logs:
+    driver: local
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
   backend-data:
   # mysql-data:

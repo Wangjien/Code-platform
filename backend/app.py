@@ -59,6 +59,7 @@ from resources.admin import (
     AdminCommentDetail,
 )
 from resources.user_category import UserCategoryList, UserCategoryDetail, UserCategorySortOrder
+from resources.health import HealthCheck
 
 # 注册API路由
 api.add_resource(UserRegister, '/api/register')
@@ -90,6 +91,9 @@ api.add_resource(AdminCommentDetail, '/api/admin/comments/<int:comment_id>')
 api.add_resource(UserCategoryList, '/api/user/categories')
 api.add_resource(UserCategoryDetail, '/api/user/categories/<int:category_id>')
 api.add_resource(UserCategorySortOrder, '/api/user/categories/sort')
+
+# Health Check API
+api.add_resource(HealthCheck, '/api/health', '/health')
 
 if __name__ == '__main__':
     # 创建数据库表
