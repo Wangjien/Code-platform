@@ -144,6 +144,24 @@
             <el-menu-item index="lang-shell">
               <el-icon><Cpu /></el-icon> Shell
             </el-menu-item>
+            <el-menu-item index="lang-perl">
+              <el-icon><Cpu /></el-icon> Perl
+            </el-menu-item>
+            <el-menu-item index="lang-rust">
+              <el-icon><Cpu /></el-icon> Rust
+            </el-menu-item>
+            <el-menu-item index="lang-matlab">
+              <el-icon><PieChart /></el-icon> MATLAB
+            </el-menu-item>
+            <el-menu-item index="lang-julia">
+              <el-icon><PieChart /></el-icon> Julia
+            </el-menu-item>
+            <el-menu-item index="lang-nextflow">
+              <el-icon><Cpu /></el-icon> Nextflow
+            </el-menu-item>
+            <el-menu-item index="lang-snakemake">
+              <el-icon><Cpu /></el-icon> Snakemake
+            </el-menu-item>
           </el-sub-menu>
           
           <el-menu-item index="hot">
@@ -306,7 +324,11 @@ const handleMenuSelect = (index: string) => {
     router.push({ path: '/', query: { category_id: categoryId } })
   } else if (index.startsWith('lang-')) {
     const lang = index.replace('lang-', '')
-    const langMap: Record<string, string> = { python: 'Python', r: 'R', shell: 'Shell' }
+    const langMap: Record<string, string> = { 
+      python: 'Python', r: 'R', shell: 'Shell', 
+      perl: 'Perl', rust: 'Rust', matlab: 'MATLAB',
+      julia: 'Julia', nextflow: 'Nextflow', snakemake: 'Snakemake'
+    }
     router.push({ path: '/', query: { language: langMap[lang] } })
   } else if (index === 'hot') {
     router.push({ path: '/', query: { sort: 'views' } })

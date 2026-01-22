@@ -55,6 +55,22 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Document, DocumentCopy } from '@element-plus/icons-vue'
 
+//======================================
+// Publish Mode Select
+//
+// 发布模式选择页：让用户选择发布方式
+//
+// 两种模式：
+// 1. 传统模式 - 代码与结果分离，支持多种结果类型（图片、表格、图表）
+//    路由：/publish/traditional -> CodePublishView
+// 2. Markdown模式 - 纯文档模式，代码和说明融为一体
+//    路由：/publish/markdown -> MarkdownPublishView
+//
+// 使用场景：
+// - 传统模式适合数据分析项目，需要展示多个运行结果
+// - Markdown模式适合教程和技术文档
+//======================================
+
 const router = useRouter()
 const selectedMode = ref<'traditional' | 'markdown' | null>(null)
 

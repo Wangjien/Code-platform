@@ -1,3 +1,18 @@
+/**
+ * HTTP 请求工具
+ * 
+ * 功能：
+ * - 封装 axios 实例，统一配置 baseURL 和超时
+ * - 请求拦截器：自动添加 JWT token
+ * - 响应拦截器：统一错误处理（401跳登录、403权限不足等）
+ * - useLoading：加载状态管理 hook
+ * 
+ * 使用方式：
+ * import http from './http'
+ * const response = await http.get('/api/codes')
+ * const response = await http.post('/api/login', { email, password })
+ */
+
 import axios, { type AxiosResponse, type AxiosError } from 'axios'
 import { ref, readonly } from 'vue'
 import { ElMessage } from 'element-plus'

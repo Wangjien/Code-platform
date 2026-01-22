@@ -8,7 +8,7 @@ class Code(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
     content = db.Column(db.Text, nullable=False)  # 代码内容，Base64编码或直接存储
-    language = db.Column(db.String(20), nullable=False)  # Python, R, Shell
+    language = db.Column(db.String(20), nullable=False)  # Python, R, Shell, Perl, Rust, MATLAB, Julia, Nextflow, Snakemake, WDL, AWK 等
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     user_category_id = db.Column(db.Integer, db.ForeignKey('user_categories.id'), nullable=True)  # 用户自定义分类（可选）
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

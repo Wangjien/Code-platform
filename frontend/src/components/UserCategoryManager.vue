@@ -97,6 +97,26 @@ import { API_CONFIG } from '../config/api'
 import { validationRules } from '../utils/validation'
 import { cache, CACHE_KEYS, CACHE_TTL } from '../utils/cache'
 
+//======================================
+// User Category Manager
+//
+// 用户自定义分类管理组件
+// 用于在个人中心管理自己的代码分类
+//
+// 功能：
+// - 创建分类：名称、描述、颜色
+// - 编辑分类：修改已有分类信息
+// - 删除分类：仅当分类下无代码时可删除
+//
+// API 接口：
+// - GET    /api/user/categories      获取分类列表
+// - POST   /api/user/categories      创建分类
+// - PUT    /api/user/categories/:id  更新分类
+// - DELETE /api/user/categories/:id  删除分类
+//
+// 使用位置：ProfileView.vue 个人中心页面
+//======================================
+
 // 响应式数据
 const { loading, withLoading } = useLoading()
 const categories = ref<any[]>([])

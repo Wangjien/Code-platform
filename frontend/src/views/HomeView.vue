@@ -46,6 +46,30 @@
           <el-option label="Shell" value="Shell">
             <span class="lang-option"><span class="lang-dot shell"></span>Shell</span>
           </el-option>
+          <el-option label="Perl" value="Perl">
+            <span class="lang-option"><span class="lang-dot perl"></span>Perl</span>
+          </el-option>
+          <el-option label="Rust" value="Rust">
+            <span class="lang-option"><span class="lang-dot rust"></span>Rust</span>
+          </el-option>
+          <el-option label="MATLAB" value="MATLAB">
+            <span class="lang-option"><span class="lang-dot matlab"></span>MATLAB</span>
+          </el-option>
+          <el-option label="Julia" value="Julia">
+            <span class="lang-option"><span class="lang-dot julia"></span>Julia</span>
+          </el-option>
+          <el-option label="Nextflow" value="Nextflow">
+            <span class="lang-option"><span class="lang-dot nextflow"></span>Nextflow</span>
+          </el-option>
+          <el-option label="Snakemake" value="Snakemake">
+            <span class="lang-option"><span class="lang-dot snakemake"></span>Snakemake</span>
+          </el-option>
+          <el-option label="WDL" value="WDL">
+            <span class="lang-option"><span class="lang-dot wdl"></span>WDL</span>
+          </el-option>
+          <el-option label="AWK" value="AWK">
+            <span class="lang-option"><span class="lang-dot awk"></span>AWK</span>
+          </el-option>
         </el-select>
         
         <el-select v-model="searchForm.category_id" placeholder="分析类型" clearable class="filter-select" @change="handleSearch">
@@ -444,6 +468,14 @@ onMounted(() => {
 .lang-dot.python { background: #3776AB; }
 .lang-dot.r { background: #276DC3; }
 .lang-dot.shell { background: #4EAA25; }
+.lang-dot.perl { background: #39457E; }
+.lang-dot.rust { background: #DEA584; }
+.lang-dot.matlab { background: #E16737; }
+.lang-dot.julia { background: #9558B2; }
+.lang-dot.nextflow { background: #3CB371; }
+.lang-dot.snakemake { background: #30A14E; }
+.lang-dot.wdl { background: #5C6BC0; }
+.lang-dot.awk { background: #FF6B6B; }
 
 .sort-buttons {
   margin-left: 8px;

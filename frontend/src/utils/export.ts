@@ -32,7 +32,16 @@ const LANGUAGE_EXTENSIONS: Record<string, string> = {
   'YAML': '.yml',
   'JSON': '.json',
   'XML': '.xml',
-  'Markdown': '.md'
+  'Markdown': '.md',
+  // 生物信息学常用语言
+  'Perl': '.pl',
+  'MATLAB': '.m',
+  'Julia': '.jl',
+  'Nextflow': '.nf',
+  'Snakemake': '.smk',
+  'WDL': '.wdl',
+  'AWK': '.awk',
+  'Other': '.txt'
 }
 
 // 代码接口定义

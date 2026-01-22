@@ -30,9 +30,17 @@
                 <el-select v-model="publishForm.language" placeholder="选择主要编程语言">
                   <el-option label="Python" value="Python" />
                   <el-option label="R" value="R" />
+                  <el-option label="Shell" value="Shell" />
+                  <el-option label="Perl" value="Perl" />
+                  <el-option label="Rust" value="Rust" />
+                  <el-option label="MATLAB" value="MATLAB" />
+                  <el-option label="Julia" value="Julia" />
+                  <el-option label="Nextflow" value="Nextflow" />
+                  <el-option label="Snakemake" value="Snakemake" />
+                  <el-option label="WDL" value="WDL" />
+                  <el-option label="AWK" value="AWK" />
                   <el-option label="JavaScript" value="JavaScript" />
                   <el-option label="Java" value="Java" />
-                  <el-option label="Shell" value="Shell" />
                   <el-option label="其他" value="Other" />
                 </el-select>
               </el-form-item>
@@ -187,6 +195,31 @@ import { setupImagePasteHandler, setupImageDropHandler } from '../utils/imagePas
 import '../styles/markdown.css'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
+
+//======================================
+// Markdown Publish View
+//
+// Markdown文档发布页：创建纯文档形式的代码分享
+//
+// 功能特性：
+// - 实时预览：编辑/预览双标签切换
+// - 图片粘贴：支持 Ctrl+V 粘贴图片，自动转为 Base64
+// - 图片拖拽：支持拖拽图片到编辑区
+// - 代码高亮：Markdown 代码块自动语法高亮
+//
+// 表单字段：
+// - title: 文档标题
+// - description: 简短描述
+// - content: Markdown 正文内容
+// - language: 主要编程语言
+// - category_id: 系统分类
+// - user_category_id: 个人分类（可选）
+// - tags: 标签列表
+// - license: 开源协议
+//
+// API 接口：POST /api/codes
+// 提交时 results 固定为 [{type: 'markdown', content: ...}]
+//======================================
 
 const router = useRouter()
 const { loading, withLoading } = useLoading()

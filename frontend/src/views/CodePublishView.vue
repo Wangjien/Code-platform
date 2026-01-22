@@ -32,6 +32,14 @@
               <el-option label="Python" value="Python" />
               <el-option label="R" value="R" />
               <el-option label="Shell" value="Shell" />
+              <el-option label="Perl" value="Perl" />
+              <el-option label="Rust" value="Rust" />
+              <el-option label="MATLAB" value="MATLAB" />
+              <el-option label="Julia" value="Julia" />
+              <el-option label="Nextflow" value="Nextflow" />
+              <el-option label="Snakemake" value="Snakemake" />
+              <el-option label="WDL" value="WDL" />
+              <el-option label="AWK" value="AWK" />
             </el-select>
           </el-form-item>
           

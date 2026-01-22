@@ -1,4 +1,23 @@
-// 图片粘贴处理工具
+/**
+ * 图片粘贴处理工具
+ * 
+ * 功能：
+ * - 处理 Ctrl+V 粘贴的图片
+ * - 处理拖拽上传的图片
+ * - 图片压缩和格式验证
+ * - 转换为 Base64 或上传到服务器
+ * 
+ * 使用方式：
+ * import { setupImagePasteHandler, setupImageDropHandler } from './imagePaste'
+ * 
+ * // 在组件 onMounted 中设置
+ * const cleanup = setupImagePasteHandler(textareaRef, (markdown) => {
+ *   // 将返回的 markdown 图片语法插入到编辑器
+ * })
+ * 
+ * // 在组件 onBeforeUnmount 中清理
+ * cleanup()
+ */
 import { ElMessage } from 'element-plus'
 
 export interface PasteImageOptions {
@@ -233,7 +252,7 @@ export function setupImageDropHandler(
     
     // 处理第一个图片文件
     const file = files[0]
-    if (!file.type.startsWith('image/')) return
+    if (!file || !file.type.startsWith('image/')) return
     
     try {
       ElMessage.info('正在处理拖拽的图片...')

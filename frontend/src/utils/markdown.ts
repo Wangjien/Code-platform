@@ -1,3 +1,17 @@
+/**
+ * Markdown 渲染工具
+ * 
+ * 功能：
+ * - 使用 marked 解析 Markdown 语法
+ * - 使用 highlight.js 实现代码高亮
+ * - 自定义渲染器增强表格、引用块、代码块样式
+ * - 支持代码块一键复制功能
+ * 
+ * 使用方式：
+ * import { renderMarkdown } from './markdown'
+ * const html = renderMarkdown(markdownText)
+ */
+
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/vs.css'

@@ -136,6 +136,29 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '../utils/http'
 import { API_CONFIG } from '../config/api'
 
+//======================================
+// Admin View
+//
+// 管理员后台：用户管理 / 内容审核 / 评论管理
+//
+// 功能模块：
+// 1. 用户管理 - 查看用户列表、设置角色、封禁/解封用户
+// 2. 内容审核 - 审核代码（通过/拒绝/禁用）
+// 3. 评论管理 - 查看和删除评论
+//
+// 权限要求：
+// - 路由守卫：requiresAdmin（仅 admin 角色可访问）
+// - 接口权限：后端会校验 JWT 中的 role
+//
+// API 接口：
+// - GET  /api/admin/users          获取用户列表
+// - PATCH /api/admin/users/:id     修改用户角色/状态
+// - GET  /api/admin/codes          获取代码列表
+// - PATCH /api/admin/codes/:id/review  审核代码
+// - GET  /api/admin/comments       获取评论列表
+// - DELETE /api/admin/comments/:id 删除评论
+//======================================
+
 const router = useRouter()
 
 const activeTab = ref<'users' | 'codes' | 'comments'>('users')

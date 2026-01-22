@@ -1,4 +1,16 @@
-// API 配置文件
+/**
+ * API 配置文件
+ * 
+ * 集中管理所有后端 API 端点地址
+ * 
+ * 环境变量：
+ * - VITE_API_BASE_URL: API 基础地址（生产环境在 .env.production 中配置）
+ * 
+ * 使用方式：
+ * import { API_CONFIG } from './config/api'
+ * http.get(API_CONFIG.endpoints.codes)
+ * http.get(API_CONFIG.endpoints.codeDetail(123))
+ */
 export const API_CONFIG = {
   // 从环境变量读取 API 基础地址，开发环境默认 localhost:5001
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
