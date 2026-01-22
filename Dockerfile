@@ -1,6 +1,6 @@
 # 多阶段构建 Dockerfile
 # 第一阶段：构建前端
-FROM node:18-alpine as frontend-builder
+FROM node:22-alpine as frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
