@@ -1,6 +1,35 @@
 # 代码分享平台
 
 一个面向生物信息学领域的代码分享平台，支持代码片段发布、Markdown文档、代码语法高亮、评论互动等功能。适用于实验室内部代码共享、团队协作开发、教学演示等场景。
+> **<font color="red">既然已经有gitee或github这种项目或代码管理平台为什么要开发这个项目？</font>**
+
+| 特性 | GitHub 代码分享平台 | 定位 |
+| :--- | :--- | :--- |
+| **定位** | 代码版本控制 + 协作开发 | 知识分享 + 代码片段管理 |
+| **内容形式** | 完整项目仓库 | 单篇文章/代码片段 |
+| **学习曲线** | 需要学 Git | 像写博客一样简单 |
+| **访问门槛** | 需要账号才能看私有仓库 | 可公开分享，无需登录即可浏览 |
+
+# 服务启动后的效果
+
+##  登录页面
+!["登录页"](https://files.mdnice.com/user/112287/5a7f4642-33a7-44c4-b58d-96628211f8d1.png)
+
+## 普通用户与管理员账户的区别
+!["普通用户登录界面"](https://files.mdnice.com/user/112287/2c264e56-6dd4-4100-a5f0-e56dce0df654.png)
+
+相比普通用户的登录界面，管理员界面可以进行后台管理。
+!["管理员登录后的界面"](https://files.mdnice.com/user/112287/551aa94e-4b1c-4066-bbe7-1d137f7914ad.png)
+后台管理界面可以对用户、内容和评论进行审核和管理。
+!["管理后台页面"](https://files.mdnice.com/user/112287/348c923c-158e-4ea3-9921-833f9845f008.png)
+
+## 内容发布界面
+提供纯代码和markdown模式发布代码。
+![](https://files.mdnice.com/user/112287/ea25f6e0-343f-4fb2-920d-bbdad07693b5.jpg)
+
+提供多种生物信息学语言支持。
+![](https://files.mdnice.com/user/112287/d5a29eca-e1e2-45b3-8826-83651073c9ae.png)
+
 
 ## 技术栈
 
@@ -149,6 +178,8 @@ cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
 
 **方式一：使用一键部署脚本 (推荐)**
 
+<font color="red">注意：在执行部署脚本之前, 查看下方的数据库配置详解</font>
+
 ```bash
 # 添加执行权限
 chmod +x deploy.sh
@@ -206,10 +237,31 @@ docker-compose logs app
 http://你的服务器IP:8080
 ```
 
+**默认管理员账户：**
+
+首次启动时会自动创建默认管理员账户：
+
+| 项目 | 默认值 |
+|------|--------|
+| 用户名 | admin |
+| 邮箱 | admin@example.com |
+| 密码 | admin123 |
+
+**重要：请登录后立即修改默认密码！**
+
+可以在 `.env` 文件中自定义管理员账户：
+
+```bash
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=你的强密码
+```
+
 **首次使用：**
-1. 点击"注册"创建新账户
-2. 使用注册的账户登录
-3. 开始发布和分享代码
+1. 使用默认管理员账户登录
+2. 进入"管理后台"进行系统配置
+3. 修改默认密码
+4. 普通用户可通过"注册"创建新账户
 
 ---
 
@@ -702,4 +754,5 @@ MIT License
 如有问题或建议，请提交 Issue 或 Pull Request。
 
 GitHub: https://github.com/Wangjien/Code-platform
+
 Email: wangje1569399536@163.com
