@@ -31,7 +31,7 @@
               type="email"
               placeholder="请输入邮箱"
               size="large"
-              :prefix-icon="Message"
+              :prefix-icon="Mail"
             />
           </el-form-item>
           
@@ -71,7 +71,7 @@
         
         <div class="back-home">
           <el-button type="info" link @click="goHome">
-            <el-icon><ArrowLeft /></el-icon> 返回首页
+            <ArrowLeft :size="16" /> 返回首页
           </el-button>
         </div>
       </div>
@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Message, Lock, DataAnalysis, ArrowLeft } from '@element-plus/icons-vue'
+import { User, Mail, Lock, BarChart2, ArrowLeft } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'

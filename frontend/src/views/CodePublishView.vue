@@ -140,7 +140,7 @@
                 <div class="result-header">
                   <span>结果 {{ index + 1 }}</span>
                   <el-button type="danger" size="small" @click="removeResult(index)">
-                    <el-icon><Delete /></el-icon> 删除
+                    <Trash2 :size="14" /> 删除
                   </el-button>
                 </div>
                 
@@ -168,7 +168,7 @@
                       :auto-upload="false"
                       :on-change="(file: any) => handleImageChange(index, file)"
                     >
-                      <el-icon><Plus /></el-icon>
+                      <Plus :size="24" />
                     </el-upload>
                     <el-input
                       v-if="result.content"
@@ -226,7 +226,7 @@
             </div>
             
             <el-button type="primary" @click="addResult">
-              <el-icon><Plus /></el-icon> 添加结果
+              <Plus :size="16" /> 添加结果
             </el-button>
           </div>
         </el-card>
@@ -246,7 +246,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Delete, Plus } from '@element-plus/icons-vue'
+import { Trash2, Plus } from 'lucide-vue-next'
 import * as monaco from 'monaco-editor'
 import { ElMessage } from 'element-plus'
 import http from '../utils/http'

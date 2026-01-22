@@ -26,11 +26,11 @@
         </div>
         
         <div class="category-actions">
-          <el-button size="small" :icon="Edit" @click="editCategory(category)" />
+          <el-button size="small" :icon="Pencil" @click="editCategory(category)" />
           <el-button 
             size="small" 
             type="danger" 
-            :icon="Delete" 
+            :icon="Trash2" 
             @click="deleteCategory(category)"
             :disabled="category.code_count > 0"
           />
@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Pencil, Trash2 } from 'lucide-vue-next'
 import { ElMessage, ElMessageBox, ElForm } from 'element-plus'
 import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'

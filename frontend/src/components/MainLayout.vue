@@ -4,7 +4,7 @@
     <header class="navbar">
       <div class="navbar-left">
         <div class="logo" @click="goHome">
-          <el-icon :size="28" color="#409EFF"><DataAnalysis /></el-icon>
+          <BarChart2 :size="28" color="#409EFF" />
           <span class="logo-text">生信代码分享平台</span>
         </div>
       </div>
@@ -18,7 +18,7 @@
           clearable
         >
           <template #prefix>
-            <el-icon><Search /></el-icon>
+            <Search :size="16" />
           </template>
         </el-input>
       </div>
@@ -31,26 +31,26 @@
         <template v-if="isLoggedIn">
           <el-dropdown trigger="click" @command="handleUserCommand">
             <div class="user-avatar">
-              <el-avatar :size="36" :icon="UserFilled" />
+              <el-avatar :size="36" :icon="User" />
               <span class="username">{{ user?.username }}</span>
-              <el-icon><ArrowDown /></el-icon>
+              <ChevronDown :size="16" />
             </div>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">
-                  <el-icon><User /></el-icon> 个人中心
+                  <span class="dropdown-icon"><User :size="16" /></span> 个人中心
                 </el-dropdown-item>
                 <el-dropdown-item command="mycodes">
-                  <el-icon><Document /></el-icon> 我的代码
+                  <span class="dropdown-icon"><FileText :size="16" /></span> 我的代码
                 </el-dropdown-item>
                 <el-dropdown-item command="favorites">
-                  <el-icon><Star /></el-icon> 我的收藏
+                  <span class="dropdown-icon"><Star :size="16" /></span> 我的收藏
                 </el-dropdown-item>
                 <el-dropdown-item v-if="user?.role === 'admin'" command="admin">
-                  <el-icon><Monitor /></el-icon> 后台管理
+                  <span class="dropdown-icon"><Monitor :size="16" /></span> 后台管理
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
-                  <el-icon><SwitchButton /></el-icon> 退出登录
+                  <span class="dropdown-icon"><LogOut :size="16" /></span> 退出登录
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -67,15 +67,15 @@
       <!-- 侧边栏 -->
       <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
         <div class="sidebar-toggle" @click="toggleSidebar">
-          <el-icon v-if="sidebarCollapsed"><Expand /></el-icon>
-          <el-icon v-else><Fold /></el-icon>
+          <Maximize2 v-if="sidebarCollapsed" :size="20" />
+          <Minimize2 v-else :size="20" />
         </div>
         
         <!-- 用户信息卡片 -->
         <div class="user-card" v-if="!sidebarCollapsed">
           <template v-if="isLoggedIn">
             <div class="user-card-header">
-              <el-avatar :size="56" :icon="UserFilled" class="user-card-avatar" />
+              <el-avatar :size="56" :icon="User" class="user-card-avatar" />
               <div class="user-card-info">
                 <div class="user-card-name">{{ user?.username }}</div>
                 <div class="user-card-email">{{ user?.email }}</div>
@@ -98,7 +98,7 @@
           </template>
           <template v-else>
             <div class="user-card-guest">
-              <el-icon :size="40" color="#909399"><UserFilled /></el-icon>
+              <User :size="40" color="#909399" />
               <p>登录后查看更多功能</p>
               <el-button type="primary" size="small" @click="goLogin">立即登录</el-button>
             </div>
@@ -112,13 +112,13 @@
           @select="handleMenuSelect"
         >
           <el-menu-item index="home">
-            <el-icon><HomeFilled /></el-icon>
+            <Home :size="18" />
             <template #title>首页</template>
           </el-menu-item>
           
           <el-sub-menu index="categories">
             <template #title>
-              <el-icon><Menu /></el-icon>
+              <Menu :size="18" />
               <span>分类浏览</span>
             </template>
             <el-menu-item
@@ -132,45 +132,45 @@
           
           <el-sub-menu index="languages">
             <template #title>
-              <el-icon><EditPen /></el-icon>
+              <PenLine :size="18" />
               <span>编程语言</span>
             </template>
             <el-menu-item index="lang-python">
-              <el-icon><Monitor /></el-icon> Python
+              <Monitor :size="16" /> Python
             </el-menu-item>
             <el-menu-item index="lang-r">
-              <el-icon><PieChart /></el-icon> R
+              <PieChart :size="16" /> R
             </el-menu-item>
             <el-menu-item index="lang-shell">
-              <el-icon><Cpu /></el-icon> Shell
+              <Cpu :size="16" /> Shell
             </el-menu-item>
             <el-menu-item index="lang-perl">
-              <el-icon><Cpu /></el-icon> Perl
+              <Cpu :size="16" /> Perl
             </el-menu-item>
             <el-menu-item index="lang-rust">
-              <el-icon><Cpu /></el-icon> Rust
+              <Cpu :size="16" /> Rust
             </el-menu-item>
             <el-menu-item index="lang-matlab">
-              <el-icon><PieChart /></el-icon> MATLAB
+              <PieChart :size="16" /> MATLAB
             </el-menu-item>
             <el-menu-item index="lang-julia">
-              <el-icon><PieChart /></el-icon> Julia
+              <PieChart :size="16" /> Julia
             </el-menu-item>
             <el-menu-item index="lang-nextflow">
-              <el-icon><Cpu /></el-icon> Nextflow
+              <Cpu :size="16" /> Nextflow
             </el-menu-item>
             <el-menu-item index="lang-snakemake">
-              <el-icon><Cpu /></el-icon> Snakemake
+              <Cpu :size="16" /> Snakemake
             </el-menu-item>
           </el-sub-menu>
           
           <el-menu-item index="hot">
-            <el-icon><Histogram /></el-icon>
+            <BarChart :size="18" />
             <template #title>热门代码</template>
           </el-menu-item>
           
           <el-menu-item index="recent">
-            <el-icon><Clock /></el-icon>
+            <Clock :size="18" />
             <template #title>最新发布</template>
           </el-menu-item>
         </el-menu>
@@ -206,10 +206,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
-  Search, Plus, UserFilled, ArrowDown, User, Document, Star,
-  SwitchButton, HomeFilled, Menu, Histogram, Clock, Expand, Fold,
-  DataAnalysis, Monitor, PieChart, Cpu, EditPen
-} from '@element-plus/icons-vue'
+  Search, Plus, User, ChevronDown, FileText, Star,
+  LogOut, Home, Menu, BarChart, Clock, Maximize2, Minimize2,
+  BarChart2, Monitor, PieChart, Cpu, PenLine
+} from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
@@ -649,5 +649,25 @@ onMounted(() => {
   .main-content.expanded {
     margin-left: 0;
   }
+}
+
+/* Lucide 图标在下拉菜单中的样式 */
+.dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-dropdown-menu__item svg) {
+  flex-shrink: 0;
 }
 </style>

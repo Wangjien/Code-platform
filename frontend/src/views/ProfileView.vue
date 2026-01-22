@@ -3,14 +3,14 @@
     <!-- 用户信息卡片 -->
     <el-card shadow="hover" class="profile-card">
       <div class="profile-header">
-        <el-avatar :size="80" :icon="UserFilled" class="profile-avatar" />
+        <el-avatar :size="80" :icon="User" class="profile-avatar" />
         <div class="profile-info">
           <h2 class="profile-name">{{ user?.username }}</h2>
           <p class="profile-email">{{ user?.email }}</p>
           <p class="profile-join">加入时间：{{ formatDate(user?.created_at) }}</p>
         </div>
         <el-button type="primary" @click="showEditDialog = true">
-          <el-icon><Edit /></el-icon> 编辑资料
+          <Pencil :size="16" /> 编辑资料
         </el-button>
       </div>
       
@@ -41,7 +41,7 @@
           <div class="codes-header" v-if="myCodes.length > 0">
             <el-dropdown @command="handleBatchExport">
               <el-button type="primary">
-                <el-icon><Download /></el-icon> 批量导出 <el-icon><ArrowDown /></el-icon>
+                <Download :size="16" /> 批量导出 <ChevronDown :size="16" />
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -69,16 +69,16 @@
               </div>
               <p class="code-desc">{{ code.description }}</p>
               <div class="code-meta">
-                <span><el-icon><View /></el-icon> {{ code.views || 0 }}</span>
-                <span><el-icon><Star /></el-icon> {{ code.likes || 0 }}</span>
+                <span><Eye :size="14" /> {{ code.views || 0 }}</span>
+                <span><Star :size="14" /> {{ code.likes || 0 }}</span>
                 <span>{{ formatDate(code.created_at) }}</span>
               </div>
               <div class="code-actions" @click.stop>
                 <el-button size="small" type="primary" @click="editCode(code.id)">
-                  <el-icon><Edit /></el-icon> 编辑
+                  <Pencil :size="14" /> 编辑
                 </el-button>
                 <el-button size="small" type="danger" @click="deleteCode(code.id)">
-                  <el-icon><Delete /></el-icon> 删除
+                  <Trash2 :size="14" /> 删除
                 </el-button>
               </div>
             </el-card>
@@ -106,7 +106,7 @@
               <p class="code-desc">{{ code.description }}</p>
               <div class="code-meta">
                 <span>作者：{{ code.author_username }}</span>
-                <span><el-icon><Star /></el-icon> {{ code.likes || 0 }}</span>
+                <span><Star :size="14" /> {{ code.likes || 0 }}</span>
               </div>
             </el-card>
           </div>
@@ -161,7 +161,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Star, UserFilled, Download, ArrowDown } from '@element-plus/icons-vue'
+import { Star, User, Download, ChevronDown, Pencil, Eye, Trash2 } from 'lucide-vue-next'
 import { exportMultipleCodes, ExportFormat } from '../utils/export'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http, { useLoading } from '../utils/http'

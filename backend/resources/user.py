@@ -10,6 +10,7 @@ from flask_restful import Resource, reqparse
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from werkzeug.security import check_password_hash
 from flask import current_app
+from sqlalchemy.orm import joinedload, selectinload
 from models.user import User
 from models.code import Code
 from models.favorite import Favorite
@@ -111,18 +112,22 @@ class UserCodes(Resource):
         # - 性能：预加载 category/author/tags/results，避免序列化时 N+1
         #############################
         user_id = get_jwt_identity()
-        codes = (
-            Code.query.options(
-                joinedload(Code.category),
-                joinedload(Code.author),
-                selectinload(Code.tags),
-                selectinload(Code.results),
+        try:
+            codes = (
+                Code.query.options(
+                    joinedload(Code.category),
+                    joinedload(Code.author),
+                    selectinload(Code.tags),
+                    selectinload(Code.results),
+                )
+                .filter_by(author_id=int(user_id))
+                .order_by(Code.created_at.desc())
+                .all()
             )
-            .filter_by(author_id=user_id)
-            .order_by(Code.created_at.desc())
-            .all()
-        )
-        return {'codes': [code.to_dict() for code in codes]}, 200
+            return {'codes': [code.to_dict() for code in codes]}, 200
+        except Exception as e:
+            current_app.logger.exception('Failed to get user codes')
+            return {'message': 'Internal server error'}, 500
 
 
 class UserFavorites(Resource):

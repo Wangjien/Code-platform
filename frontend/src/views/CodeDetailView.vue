@@ -16,11 +16,11 @@
         </div>
         <div class="code-actions">
           <el-button type="primary" @click="handleCopyCode">
-            <el-icon><DocumentCopy /></el-icon> 复制代码
+            <Copy :size="16" /> 复制代码
           </el-button>
           <el-dropdown @command="handleExportCode">
             <el-button>
-              <el-icon><Download /></el-icon> 导出代码 <el-icon><ArrowDown /></el-icon>
+              <Download :size="16" /> 导出代码 <ChevronDown :size="16" />
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
@@ -31,7 +31,7 @@
             </template>
           </el-dropdown>
           <el-button type="success" @click="handleLike">
-            <el-icon><Star /></el-icon> 点赞 ({{ code.likes }})
+            <Star :size="16" /> 点赞 ({{ code.likes }})
           </el-button>
         </div>
       </div>
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { DocumentCopy, Download, Star, ArrowDown } from '@element-plus/icons-vue'
+import { Copy, Download, Star, ChevronDown } from 'lucide-vue-next'
 import { exportSingleCode, ExportFormat } from '../utils/export'
 import loader from '@monaco-editor/loader'
 import * as echarts from 'echarts'

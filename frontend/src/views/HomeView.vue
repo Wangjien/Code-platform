@@ -32,7 +32,7 @@
           class="clear-filters-btn"
           size="small"
         >
-          <el-icon><RefreshLeft /></el-icon>
+          <RotateCcw :size="14" />
           清空筛选
         </el-button>
         
@@ -101,13 +101,13 @@
         
         <el-button-group class="sort-buttons">
           <el-button :type="sortBy === 'recent' ? 'primary' : 'default'" @click="setSortBy('recent')">
-            <el-icon><Clock /></el-icon> 最新
+            <Clock :size="14" /> 最新
           </el-button>
           <el-button :type="sortBy === 'views' ? 'primary' : 'default'" @click="setSortBy('views')">
-            <el-icon><View /></el-icon> 最热
+            <Eye :size="14" /> 最热
           </el-button>
           <el-button :type="sortBy === 'likes' ? 'primary' : 'default'" @click="setSortBy('likes')">
-            <el-icon><Star /></el-icon> 最赞
+            <Star :size="14" /> 最赞
           </el-button>
         </el-button-group>
       </div>
@@ -126,10 +126,10 @@
           </div>
           <div class="card-actions">
             <el-tooltip content="浏览量">
-              <span class="action-item"><el-icon><View /></el-icon> {{ code.views }}</span>
+              <span class="action-item"><Eye :size="14" /> {{ code.views }}</span>
             </el-tooltip>
             <el-tooltip content="点赞数">
-              <span class="action-item"><el-icon><Star /></el-icon> {{ code.likes }}</span>
+              <span class="action-item"><Star :size="14" /> {{ code.likes }}</span>
             </el-tooltip>
           </div>
         </div>
@@ -154,7 +154,7 @@
         
         <div class="card-footer">
           <div class="author-info">
-            <el-avatar :size="24" :icon="UserFilled" class="author-avatar" />
+            <el-avatar :size="24" :icon="User" class="author-avatar" />
             <span class="author-name">{{ code.author_username }}</span>
           </div>
           <div class="card-meta">
@@ -195,7 +195,7 @@ import http, { useLoading } from '../utils/http'
 import { API_CONFIG } from '../config/api'
 import { cache, CACHE_KEYS, CACHE_TTL } from '../utils/cache'
 import { debounce } from '../utils/ui-helpers'
-import { Star, View, Clock, RefreshLeft, UserFilled } from '@element-plus/icons-vue'
+import { Star, Eye, Clock, RotateCcw, User } from 'lucide-vue-next'
 
 //======================================
 // Home View

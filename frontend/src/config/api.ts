@@ -34,6 +34,7 @@ export const API_CONFIG = {
     
     // 分类和标签
     categories: '/api/categories',
+    categoryDetail: (id: number) => `/api/categories/${id}`,
     tags: '/api/tags',
     
     // 用户自定义分类

@@ -124,7 +124,48 @@
             />
           </div>
         </el-tab-pane>
+
+        <el-tab-pane label="分类管理" name="categories">
+          <div class="toolbar">
+            <el-button type="primary" @click="showCategoryDialog = true">
+              <Plus :size="16" /> 新增分类
+            </el-button>
+          </div>
+
+          <el-table :data="categories" border style="width: 100%" v-loading="loadingCategories">
+            <el-table-column prop="id" label="ID" width="80" />
+            <el-table-column prop="name" label="分类名称" />
+            <el-table-column prop="description" label="描述" />
+            <el-table-column prop="created_at" label="创建时间" width="180">
+              <template #default="scope">
+                {{ formatDate(scope.row.created_at) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="200">
+              <template #default="scope">
+                <el-button size="small" type="primary" plain @click="editCategory(scope.row)">编辑</el-button>
+                <el-button size="small" type="danger" plain @click="deleteCategory(scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
       </el-tabs>
+
+      <!-- 分类编辑对话框 -->
+      <el-dialog v-model="showCategoryDialog" :title="editingCategory ? '编辑分类' : '新增分类'" width="500px">
+        <el-form :model="categoryForm" label-width="80px">
+          <el-form-item label="分类名称" required>
+            <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
+          </el-form-item>
+          <el-form-item label="描述">
+            <el-input v-model="categoryForm.description" type="textarea" :rows="3" placeholder="请输入分类描述" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showCategoryDialog = false">取消</el-button>
+          <el-button type="primary" @click="saveCategory" :loading="savingCategory">保存</el-button>
+        </template>
+      </el-dialog>
     </el-card>
   </div>
 </template>
@@ -132,6 +173,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Plus } from 'lucide-vue-next'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '../utils/http'
 import { API_CONFIG } from '../config/api'
@@ -161,7 +203,14 @@ import { API_CONFIG } from '../config/api'
 
 const router = useRouter()
 
-const activeTab = ref<'users' | 'codes' | 'comments'>('users')
+const activeTab = ref<'users' | 'codes' | 'comments' | 'categories'>('users')
+
+// 日期格式化
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
 
 // Users
 const users = ref<any[]>([])
@@ -343,10 +392,82 @@ const deleteComment = async (comment: any) => {
   }
 }
 
+// Categories (系统分类管理)
+const categories = ref<any[]>([])
+const loadingCategories = ref(false)
+const showCategoryDialog = ref(false)
+const editingCategory = ref<any>(null)
+const savingCategory = ref(false)
+const categoryForm = ref({
+  name: '',
+  description: ''
+})
+
+const fetchCategories = async () => {
+  loadingCategories.value = true
+  try {
+    const res = await http.get(API_CONFIG.endpoints.categories)
+    categories.value = res.data || []
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || '获取分类列表失败')
+  } finally {
+    loadingCategories.value = false
+  }
+}
+
+const editCategory = (category: any) => {
+  editingCategory.value = category
+  categoryForm.value = {
+    name: category.name,
+    description: category.description || ''
+  }
+  showCategoryDialog.value = true
+}
+
+const saveCategory = async () => {
+  if (!categoryForm.value.name.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+  
+  savingCategory.value = true
+  try {
+    if (editingCategory.value) {
+      // 更新分类
+      await http.put(API_CONFIG.endpoints.categoryDetail(editingCategory.value.id), categoryForm.value)
+      ElMessage.success('分类更新成功')
+    } else {
+      // 新增分类
+      await http.post(API_CONFIG.endpoints.categories, categoryForm.value)
+      ElMessage.success('分类创建成功')
+    }
+    showCategoryDialog.value = false
+    editingCategory.value = null
+    categoryForm.value = { name: '', description: '' }
+    fetchCategories()
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || '保存失败')
+  } finally {
+    savingCategory.value = false
+  }
+}
+
+const deleteCategory = async (category: any) => {
+  try {
+    await ElMessageBox.confirm(`确定要删除分类"${category.name}"吗？`, '提示', { type: 'warning' })
+    await http.delete(API_CONFIG.endpoints.categoryDetail(category.id))
+    ElMessage.success('删除成功')
+    fetchCategories()
+  } catch (e: any) {
+    if (e !== 'cancel') ElMessage.error(e.response?.data?.message || '删除失败')
+  }
+}
+
 const handleTabChange = () => {
   if (activeTab.value === 'users') fetchUsers()
   if (activeTab.value === 'codes') fetchCodes()
   if (activeTab.value === 'comments') fetchComments()
+  if (activeTab.value === 'categories') fetchCategories()
 }
 
 onMounted(() => {

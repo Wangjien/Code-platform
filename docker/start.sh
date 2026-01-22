@@ -38,6 +38,51 @@ with app.app_context():
     print('数据库表已创建')
 "
 
+# 创建默认管理员账户（如果不存在）
+echo "[INFO] 检查默认管理员账户..."
+python -c "
+import os
+from app import app, db
+from models.user import User
+from werkzeug.security import generate_password_hash
+
+with app.app_context():
+    # 从环境变量获取管理员信息，或使用默认值
+    admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    
+    # 检查管理员是否已存在
+    existing_admin = User.query.filter_by(email=admin_email).first()
+    if not existing_admin:
+        existing_admin = User.query.filter_by(username=admin_username).first()
+    
+    if existing_admin:
+        # 确保已有用户是管理员
+        if existing_admin.role != 'admin':
+            existing_admin.role = 'admin'
+            db.session.commit()
+            print(f'用户 {existing_admin.username} 已提升为管理员')
+        else:
+            print(f'管理员账户已存在: {existing_admin.username}')
+    else:
+        # 创建新管理员
+        admin = User(
+            username=admin_username,
+            email=admin_email,
+            password_hash=generate_password_hash(admin_password),
+            role='admin',
+            is_active=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print(f'[OK] 默认管理员账户已创建')
+        print(f'    用户名: {admin_username}')
+        print(f'    邮箱: {admin_email}')
+        print(f'    密码: {admin_password}')
+        print(f'    [WARNING] 请登录后立即修改默认密码！')
+"
+
 # 执行数据库索引优化（如果存在）
 if [ -f "/app/backend/migrations/add_search_indexes.sql" ]; then
     echo "[INFO] 执行数据库索引优化..."

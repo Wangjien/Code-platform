@@ -9,7 +9,7 @@
       <div class="modes">
         <div class="mode-option" @click="selectMode('traditional')" :class="{ active: selectedMode === 'traditional' }">
           <div class="mode-icon">
-            <el-icon size="48"><DocumentCopy /></el-icon>
+            <Copy :size="48" />
           </div>
           <div class="mode-info">
             <h3>传统模式</h3>
@@ -25,7 +25,7 @@
 
         <div class="mode-option" @click="selectMode('markdown')" :class="{ active: selectedMode === 'markdown' }">
           <div class="mode-icon">
-            <el-icon size="48"><Document /></el-icon>
+            <FileText :size="48" />
           </div>
           <div class="mode-info">
             <h3>Markdown模式</h3>
@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Document, DocumentCopy } from '@element-plus/icons-vue'
+import { FileText, Copy } from 'lucide-vue-next'
 
 //======================================
 // Publish Mode Select
