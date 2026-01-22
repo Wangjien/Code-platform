@@ -2,11 +2,13 @@
 # 注意：需要先在本地运行 cd frontend && npm run build
 FROM python:3.9-slim
 
-# 安装系统依赖
+# 安装系统依赖（包括 gcc 用于编译 psutil）
 RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
     curl \
+    gcc \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建应用目录
