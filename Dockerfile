@@ -1,15 +1,5 @@
-# 多阶段构建 Dockerfile
-# 第一阶段：构建前端
-FROM node:22-alpine as frontend-builder
-
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-
-COPY frontend/ ./
-RUN npm run build
-
-# 第二阶段：Python 后端 + Nginx
+# Dockerfile - 使用预构建的前端
+# 注意：需要先在本地运行 cd frontend && npm run build
 FROM python:3.9-slim
 
 # 安装系统依赖
@@ -22,9 +12,9 @@ RUN apt-get update && apt-get install -y \
 # 创建应用目录
 WORKDIR /app
 
-# 复制后端代码
+# 复制后端代码和预构建的前端
 COPY backend/ ./backend/
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist/
+COPY frontend/dist ./frontend/dist/
 
 # 安装Python依赖
 COPY requirements.txt .
