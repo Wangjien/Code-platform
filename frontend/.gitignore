@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist  # 注释掉以便提交预构建文件到服务器
 dist-ssr
 *.local
 
