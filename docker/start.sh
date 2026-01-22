@@ -3,15 +3,26 @@
 # 容器启动脚本
 set -e
 
-echo "🚀 启动代码分享平台..."
+echo "[INFO] 启动代码分享平台..."
+
+# 自动生成密钥（如果未设置）
+if [[ "$JWT_SECRET_KEY" == "your-secret-key-change-in-production" ]] || [[ -z "$JWT_SECRET_KEY" ]]; then
+    export JWT_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+    echo "[INFO] 已自动生成 JWT_SECRET_KEY"
+fi
+
+if [[ "$SECRET_KEY" == "your-app-secret-key" ]] || [[ -z "$SECRET_KEY" ]]; then
+    export SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+    echo "[INFO] 已自动生成 SECRET_KEY"
+fi
 
 # 等待数据库连接（如果使用外部数据库）
 if [[ "$DATABASE_URI" == mysql* ]]; then
-    echo "⏳ 等待数据库连接..."
+    echo "[INFO] 等待数据库连接..."
     while ! nc -z ${DB_HOST:-mysql} ${DB_PORT:-3306}; do
         sleep 1
     done
-    echo "✅ 数据库连接成功"
+    echo "[OK] 数据库连接成功"
 fi
 
 # 创建必要目录
@@ -19,7 +30,7 @@ mkdir -p /app/backend/instance /app/backend/logs
 
 # 初始化数据库
 cd /app/backend
-echo "🔄 初始化数据库..."
+echo "[INFO] 初始化数据库..."
 python -c "
 from app import app, db
 with app.app_context():
@@ -29,7 +40,7 @@ with app.app_context():
 
 # 执行数据库索引优化（如果存在）
 if [ -f "/app/backend/migrations/add_search_indexes.sql" ]; then
-    echo "🔍 执行数据库索引优化..."
+    echo "[INFO] 执行数据库索引优化..."
     python -c "
 import sqlite3
 import os
@@ -50,8 +61,8 @@ with app.app_context():
 "
 fi
 
-echo "✅ 应用初始化完成"
+echo "[OK] 应用初始化完成"
 
 # 启动Supervisor
-echo "🎯 启动服务..."
+echo "[INFO] 启动服务..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

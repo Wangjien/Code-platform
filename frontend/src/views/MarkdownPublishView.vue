@@ -2,7 +2,7 @@
   <div class="markdown-publish-container">
     <el-card class="publish-card">
       <div class="card-header">
-        <h2>📝 Markdown文档发布</h2>
+        <h2>Markdown文档发布</h2>
         <p>创建包含代码和说明的一体化文档</p>
       </div>
 
@@ -81,10 +81,10 @@
 
         <!-- Markdown内容编辑 -->
         <div class="form-section">
-          <h3>📄 文档内容</h3>
+          <h3>文档内容</h3>
           <div class="markdown-editor">
             <el-tabs type="border-card" v-model="activeTab">
-              <el-tab-pane label="✏️ 编辑" name="edit">
+              <el-tab-pane label="编辑" name="edit">
                 <div class="markdown-editor-container">
                   <el-input
                     ref="markdownEditor"
@@ -116,15 +116,15 @@ print(df.head())
 项目的总结和后续计划"
                   />
                   <div class="markdown-editor-hint" v-if="!publishForm.content">
-                    <div class="hint-icon">📝</div>
+                    <div class="hint-icon">EDIT</div>
                     <div class="hint-text">
                       <p><strong>支持功能：</strong></p>
                       <ul>
-                        <li>🖼️ 直接粘贴图片 (Ctrl+V)</li>
-                        <li>📁 拖拽图片文件</li>
-                        <li>📊 Mermaid图表</li>
-                        <li>🧮 数学公式 (LaTeX)</li>
-                        <li>💡 提示框 [!NOTE]</li>
+                        <li>直接粘贴图片 (Ctrl+V)</li>
+                        <li>拖拽图片文件</li>
+                        <li>Mermaid图表</li>
+                        <li>数学公式 (LaTeX)</li>
+                        <li>提示框 [!NOTE]</li>
                       </ul>
                     </div>
                   </div>
@@ -137,7 +137,7 @@ print(df.head())
                 </div>
               </el-tab-pane>
               
-              <el-tab-pane label="👁️ 预览" name="preview">
+              <el-tab-pane label="预览" name="preview">
                 <div class="markdown-preview markdown-content" v-html="renderMarkdownContent(publishForm.content)"></div>
               </el-tab-pane>
             </el-tabs>

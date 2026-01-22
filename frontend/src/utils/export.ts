@@ -64,13 +64,15 @@ interface Code {
   tags?: Array<{ name: string }>
 }
 
-// 导出格式枚举
-export enum ExportFormat {
-  SOURCE = 'source',      // 源码文件
-  MARKDOWN = 'markdown',  // Markdown格式
-  JSON = 'json',          // JSON格式
-  ZIP = 'zip'             // ZIP压缩包
-}
+// 导出格式常量
+export const ExportFormat = {
+  SOURCE: 'source',      // 源码文件
+  MARKDOWN: 'markdown',  // Markdown格式
+  JSON: 'json',          // JSON格式
+  ZIP: 'zip'             // ZIP压缩包
+} as const
+
+export type ExportFormat = typeof ExportFormat[keyof typeof ExportFormat]
 
 /**
  * 获取文件扩展名
@@ -236,7 +238,7 @@ function generateMarkdownContent(code: Code): string {
   
   return `# ${code.title}
 
-## 📋 基本信息
+## 基本信息
 
 - **作者**: ${code.author.username}
 - **创建时间**: ${new Date(code.created_at).toLocaleString('zh-CN')}
@@ -244,11 +246,11 @@ function generateMarkdownContent(code: Code): string {
 - **分类**: ${code.user_category?.name || code.category?.name || '未分类'}
 ${tags ? `- **标签**: ${tags}` : ''}
 
-## 📝 代码描述
+## 代码描述
 
 ${code.description || '暂无描述'}
 
-## 💻 源代码
+## 源代码
 
 \`\`\`${code.language.toLowerCase()}
 ${code.content}
@@ -295,7 +297,7 @@ function generateExportInfo(codes: Code[], format: ExportFormat): string {
   
   return `# 代码导出信息
 
-## 📊 导出统计
+## 导出统计
 
 - **导出时间**: ${new Date().toLocaleString('zh-CN')}
 - **导出格式**: ${format}
@@ -303,7 +305,7 @@ function generateExportInfo(codes: Code[], format: ExportFormat): string {
 - **涉及分类**: ${Array.from(categories).join(', ')}
 - **编程语言**: ${Array.from(languages).join(', ')}
 
-## 📁 文件结构
+## 文件结构
 
 代码文件按分类组织在不同文件夹中：
 
@@ -314,7 +316,7 @@ ${Array.from(categories).map(category => {
   return `- **${category}**: ${categoryCount} 个文件`
 }).join('\n')}
 
-## 💡 使用说明
+## 使用说明
 
 1. **源码文件**: 可直接运行或编辑
 2. **Markdown文件**: 包含完整的元数据信息

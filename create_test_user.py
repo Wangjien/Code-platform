@@ -18,22 +18,22 @@ def create_test_account():
         print(f"响应内容: {response.text}")
         
         if response.status_code == 201:
-            print("\n✅ 测试账户创建成功！")
+            print("\n[OK] 测试账户创建成功！")
             print(f"用户名: {test_user['username']}")
             print(f"邮箱: {test_user['email']}")
             print(f"密码: {test_user['password']}")
             print("\n可以使用以上账户登录 http://localhost:5173")
         elif response.status_code == 400:
-            print("\nℹ️ 测试账户已存在")
+            print("\n[INFO] 测试账户已存在")
             print(f"用户名: {test_user['username']}")
             print(f"邮箱: {test_user['email']}")
             print(f"密码: {test_user['password']}")
             print("\n可以使用以上账户登录 http://localhost:5173")
         else:
-            print("\n❌ 测试账户创建失败")
+            print("\n[ERROR] 测试账户创建失败")
             
     except Exception as e:
-        print(f"\n❌ 创建测试账户时出错: {e}")
+        print(f"\n[ERROR] 创建测试账户时出错: {e}")
 
 if __name__ == "__main__":
     create_test_account()

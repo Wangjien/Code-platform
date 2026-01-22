@@ -13,19 +13,19 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 print_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
+    echo -e "${BLUE}[INFO] $1${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+    echo -e "${GREEN}[OK] $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+    echo -e "${YELLOW}[WARN] $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo -e "${RED}[ERROR] $1${NC}"
 }
 
 # 检查必要的工具
@@ -159,24 +159,24 @@ health_check() {
 
 # 显示部署信息
 show_deployment_info() {
-    print_success "🎉 部署完成！"
+    print_success "部署完成！"
     echo
-    echo "📋 部署信息:"
-    echo "  • 应用地址: http://localhost:8080"
-    echo "  • 环境类型: $ENV"
-    echo "  • 数据库类型: $DB_TYPE"
+    echo "部署信息:"
+    echo "  - 应用地址: http://localhost:8080"
+    echo "  - 环境类型: $ENV"
+    echo "  - 数据库类型: $DB_TYPE"
     if [[ "$DB_TYPE" == "mysql" ]]; then
-        echo "  • MySQL地址: localhost:3306"
+        echo "  - MySQL地址: localhost:3306"
     fi
-    echo "  • Redis地址: localhost:6379"
+    echo "  - Redis地址: localhost:6379"
     echo
-    echo "🔧 常用命令:"
-    echo "  • 查看日志: docker-compose logs -f"
-    echo "  • 重启服务: docker-compose restart"
-    echo "  • 停止服务: docker-compose down"
-    echo "  • 查看状态: docker-compose ps"
+    echo "常用命令:"
+    echo "  - 查看日志: docker-compose logs -f"
+    echo "  - 重启服务: docker-compose restart"
+    echo "  - 停止服务: docker-compose down"
+    echo "  - 查看状态: docker-compose ps"
     echo
-    echo "📊 服务状态:"
+    echo "服务状态:"
     docker-compose ps
 }
 
@@ -200,7 +200,7 @@ create_backup() {
 
 # 主函数
 main() {
-    echo "🚀 代码分享平台一键部署脚本"
+    echo "代码分享平台一键部署脚本"
     echo "=================================="
     
     # 解析参数
@@ -237,7 +237,7 @@ main() {
     health_check
     show_deployment_info
     
-    print_success "🎊 部署成功完成！"
+    print_success "部署成功完成！"
 }
 
 # 错误处理

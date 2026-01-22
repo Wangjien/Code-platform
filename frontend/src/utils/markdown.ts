@@ -103,13 +103,13 @@ const alertTypes = ['note', 'tip', 'warning', 'danger', 'info']
 function processAlerts(html: string): string {
   alertTypes.forEach(type => {
     const regex = new RegExp(`<blockquote>\\s*<p>\\[!${type.toUpperCase()}\\]([\\s\\S]*?)</p>\\s*</blockquote>`, 'gi')
-    html = html.replace(regex, (match, content) => {
+    html = html.replace(regex, (_match, content) => {
       const icons = {
-        note: '📝',
-        tip: '💡', 
-        warning: '⚠️',
-        danger: '🚨',
-        info: 'ℹ️'
+        note: 'NOTE',
+        tip: 'TIP', 
+        warning: 'WARN',
+        danger: 'DANGER',
+        info: 'INFO'
       }
       
       return `
@@ -125,7 +125,7 @@ function processAlerts(html: string): string {
 
 // Mermaid图表支持
 function processMermaid(html: string): string {
-  return html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g, (match, code) => {
+  return html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g, (_match, code) => {
     const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`
     return `<div class="mermaid-container"><div class="mermaid" id="${id}">${code}</div></div>`
   })
@@ -134,12 +134,12 @@ function processMermaid(html: string): string {
 // 数学公式支持 (KaTeX)
 function processMath(html: string): string {
   // 行内公式 $formula$
-  html = html.replace(/\$([^$\n]+)\$/g, (match, formula) => {
+  html = html.replace(/\$([^$\n]+)\$/g, (_match, formula) => {
     return `<span class="katex-inline" data-formula="${encodeURIComponent(formula)}">$${formula}$</span>`
   })
   
   // 块级公式 $$formula$$
-  html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+  html = html.replace(/\$\$([\s\S]*?)\$\$/g, (_match, formula) => {
     return `<div class="katex-block" data-formula="${encodeURIComponent(formula.trim())}">$$${formula}$$</div>`
   })
   
@@ -150,7 +150,7 @@ function processMath(html: string): string {
 function generateTOC(html: string): { toc: string; html: string } {
   const headings: { level: number; text: string; id: string }[] = []
   
-  const htmlWithIds = html.replace(/<h([1-6])>(.*?)<\/h[1-6]>/g, (match, level, text) => {
+  const htmlWithIds = html.replace(/<h([1-6])>(.*?)<\/h[1-6]>/g, (_match, level, text) => {
     const cleanText = text.replace(/<[^>]*>/g, '')
     const id = cleanText.toLowerCase()
       .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')

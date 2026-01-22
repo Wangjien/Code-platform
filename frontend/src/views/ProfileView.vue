@@ -357,7 +357,7 @@ const saveSettings = async () => {
   }
   
   await withLoading(async () => {
-    const response = await http.put(API_CONFIG.endpoints.userProfile, settingsForm.value)
+    await http.put(API_CONFIG.endpoints.userProfile, settingsForm.value)
     
     // 更新本地存储
     const updatedUser = { ...user.value, ...settingsForm.value }

@@ -257,7 +257,7 @@ const formatDate = (dateString: string) => {
 }
 
 // 防抖搜索功能
-const debouncedSearch = debounce(() => {
+const _debouncedSearch = debounce(() => {
   pagination.value.current_page = 1
   fetchCodes()
 }, 500)
