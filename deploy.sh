@@ -5,6 +5,14 @@
 
 set -e
 
+# 兼容 docker compose (plugin) 与 docker-compose (legacy)
+echo "======================================================================"
+echo "开始部署代码分享平台"
+echo "兼容 docker compose (plugin) 与 docker-compose (legacy)"
+echo "======================================================================"
+
+COMPOSE_CMD=""
+
 # 颜色输出函数
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -36,9 +44,15 @@ check_requirements() {
         print_error "Docker 未安装，请先安装 Docker"
         exit 1
     fi
-    
-    if ! command -v docker-compose &> /dev/null; then
+
+    # 优先使用 docker compose（Docker Compose v2+ 插件）
+    if docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    elif command -v docker-compose >/dev/null 2>&1; then
+        COMPOSE_CMD="docker-compose"
+    else
         print_error "Docker Compose 未安装，请先安装 Docker Compose"
+        print_error "提示：你可以安装 docker-compose-plugin，或安装 docker-compose 二进制"
         exit 1
     fi
     
@@ -88,7 +102,7 @@ generate_env() {
 build_images() {
     print_info "构建Docker镜像..."
     
-    docker-compose build --no-cache
+    $COMPOSE_CMD build --no-cache
     
     print_success "镜像构建完成"
 }
@@ -99,7 +113,7 @@ start_services() {
     
     if [[ "$DB_TYPE" == "mysql" ]]; then
         # 使用MySQL
-        docker-compose up -d mysql redis
+        $COMPOSE_CMD up -d mysql redis
         print_info "等待MySQL启动..."
         sleep 10
         
@@ -107,7 +121,7 @@ start_services() {
         max_attempts=30
         attempt=1
         while [[ $attempt -le $max_attempts ]]; do
-            if docker-compose exec mysql mysqladmin ping -h localhost --silent; then
+            if $COMPOSE_CMD exec mysql mysqladmin ping -h localhost --silent; then
                 print_success "MySQL已就绪"
                 break
             fi
@@ -128,7 +142,7 @@ start_services() {
     fi
     
     # 启动应用服务
-    docker-compose up -d
+    $COMPOSE_CMD up -d
     
     print_success "服务启动完成"
 }
@@ -152,7 +166,7 @@ health_check() {
     
     if [[ $attempt -gt $max_attempts ]]; then
         print_error "应用启动超时，请检查日志"
-        docker-compose logs app
+        $COMPOSE_CMD logs app
         exit 1
     fi
 }
@@ -171,13 +185,13 @@ show_deployment_info() {
     echo "  - Redis地址: localhost:6379"
     echo
     echo "常用命令:"
-    echo "  - 查看日志: docker-compose logs -f"
-    echo "  - 重启服务: docker-compose restart"
-    echo "  - 停止服务: docker-compose down"
-    echo "  - 查看状态: docker-compose ps"
+    echo "  - 查看日志: $COMPOSE_CMD logs -f"
+    echo "  - 重启服务: $COMPOSE_CMD restart"
+    echo "  - 停止服务: $COMPOSE_CMD down"
+    echo "  - 查看状态: $COMPOSE_CMD ps"
     echo
     echo "服务状态:"
-    docker-compose ps
+    $COMPOSE_CMD ps
 }
 
 # 创建备份
@@ -188,10 +202,10 @@ create_backup() {
         
         # 备份数据库
         if [[ "$DB_TYPE" == "sqlite" ]]; then
-            docker-compose exec app cp /app/backend/instance/bio_code_share.db "/tmp/$backup_name.db" || true
-            docker cp $(docker-compose ps -q app):/tmp/$backup_name.db "backups/$backup_name/" || true
+            $COMPOSE_CMD exec app cp /app/backend/instance/bio_code_share.db "/tmp/$backup_name.db" || true
+            docker cp $($COMPOSE_CMD ps -q app):/tmp/$backup_name.db "backups/$backup_name/" || true
         elif [[ "$DB_TYPE" == "mysql" ]]; then
-            docker-compose exec mysql mysqldump -u app_user -p${DB_PASSWORD:-apppassword} bio_code_share > "backups/$backup_name/database.sql" || true
+            $COMPOSE_CMD exec mysql mysqldump -u app_user -p${DB_PASSWORD:-apppassword} bio_code_share > "backups/$backup_name/database.sql" || true
         fi
         
         print_success "数据已备份到 backups/$backup_name/"
