@@ -16,7 +16,7 @@ services:
       
       # 数据库配置（选择其一）
       # SQLite（默认，适合小规模）
-      - DATABASE_URI=sqlite:///instance/bio_code_share.db
+      - DATABASE_URI=${DATABASE_URI:-sqlite:////app/backend/instance/bio_code_share.db}
       
       # MySQL（生产环境推荐）
       # - DATABASE_URI=mysql+pymysql://app_user:${DB_PASSWORD:-apppassword}@mysql:3306/bio_code_share

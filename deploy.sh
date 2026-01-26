@@ -9,6 +9,7 @@ set -e
 echo "======================================================================"
 echo "开始部署代码分享平台"
 echo "兼容 docker compose (plugin) 与 docker-compose (legacy)"
+echo "开始时间: $(date)"
 echo "======================================================================"
 
 COMPOSE_CMD=""
@@ -240,10 +241,10 @@ main() {
     generate_env
     
     # 创建备份（如果存在旧数据）
-    if docker-compose ps | grep -q "Up"; then
+    if $COMPOSE_CMD ps | grep -q "Up"; then
         print_info "检测到运行中的服务，创建备份..."
         create_backup
-        docker-compose down
+        $COMPOSE_CMD down
     fi
     
     build_images
@@ -259,3 +260,6 @@ trap 'print_error "部署过程中发生错误，请检查上面的错误信息"
 
 # 执行主函数
 main "$@"
+
+echo "===================================================="
+echo "结束时间: $(date)"
