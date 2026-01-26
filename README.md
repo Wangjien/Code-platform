@@ -1,5 +1,6 @@
-<font color="red"> 数据库配置有些问题，我需要先修复一下_ 2026-01-26</font>
-<font color="blue"> TODO: 录制部署视频.</font>
+# <font color="red"> 数据库配置有些问题，我需要先修复一下_ 2026-01-26</font>
+
+# <font color="blue"> TODO: 录制部署视频.</font>
 
 
 # 代码分享平台
