@@ -5,6 +5,7 @@
 from flask import current_app
 from flask_restful import Resource
 from models import db
+from sqlalchemy import text
 import os
 import psutil
 import time
@@ -52,7 +53,7 @@ class HealthCheck(Resource):
         """检查数据库连接状态"""
         try:
             # 执行简单查询测试连接
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             db.session.commit()
             
             db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
