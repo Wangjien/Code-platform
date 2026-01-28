@@ -1,6 +1,6 @@
 # <font color="red"> 数据库配置有些问题，我需要先修复一下_ 2026-01-26</font>
 
-# <font color="blue"> TODO: 录制部署视频.</font>
+# <font color="blue"> TODO: 录制部署视频, Docker部署时间还是很长。需要打包直接可用镜像</font>
 
 
 # 代码分享平台
