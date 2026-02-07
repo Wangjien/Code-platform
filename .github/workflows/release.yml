@@ -1,0 +1,130 @@
+# ============================================================
+# GitHub Actions: 发布版本时自动构建镜像
+# ============================================================
+# 触发条件：创建 Release
+# 
+# 功能：
+#   - 构建 Docker 镜像
+#   - 推送到 Docker Hub 和 GHCR
+#   - 生成镜像 tar.gz 文件并附加到 Release
+# ============================================================
+
+name: Release Docker Image
+
+on:
+  release:
+    types: [published]
+
+env:
+  DOCKERHUB_REPO: wangjien/code-platform
+  GHCR_REPO: ghcr.io/wangjien/code-platform
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_REPO }}:${{ steps.version.outputs.version }}
+            ${{ env.DOCKERHUB_REPO }}:latest
+            ${{ env.GHCR_REPO }}:${{ steps.version.outputs.version }}
+            ${{ env.GHCR_REPO }}:latest
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export image to tar.gz
+        run: |
+          docker pull ${{ env.DOCKERHUB_REPO }}:${{ steps.version.outputs.version }}
+          docker save ${{ env.DOCKERHUB_REPO }}:${{ steps.version.outputs.version }} | gzip > code-platform-${{ steps.version.outputs.version }}.tar.gz
+          sha256sum code-platform-${{ steps.version.outputs.version }}.tar.gz > code-platform-${{ steps.version.outputs.version }}.tar.gz.sha256
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            code-platform-${{ steps.version.outputs.version }}.tar.gz
+            code-platform-${{ steps.version.outputs.version }}.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Release Notes
+        uses: softprops/action-gh-release@v1
+        with:
+          append_body: true
+          body: |
+            
+            ---
+            
+            ## 🐳 Docker 镜像
+            
+            ### 从 Docker Hub 拉取
+            ```bash
+            docker pull ${{ env.DOCKERHUB_REPO }}:${{ steps.version.outputs.version }}
+            ```
+            
+            ### 从 GitHub Container Registry 拉取
+            ```bash
+            docker pull ${{ env.GHCR_REPO }}:${{ steps.version.outputs.version }}
+            ```
+            
+            ### 一键部署
+            ```bash
+            mkdir -p ~/code-platform && cd ~/code-platform
+            curl -O https://raw.githubusercontent.com/Wangjien/Code-platform/${{ steps.version.outputs.tag }}/docker-compose.hub.yml
+            curl -O https://raw.githubusercontent.com/Wangjien/Code-platform/${{ steps.version.outputs.tag }}/.env.example
+            cp .env.example .env
+            # 编辑 .env 配置 JWT_SECRET_KEY
+            docker compose -f docker-compose.hub.yml up -d
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

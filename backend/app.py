@@ -28,7 +28,9 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # 开发环境不设置过期时
 app.config['JWT_ERROR_MESSAGE_KEY'] = 'message'
 
 # 配置数据库
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'mysql+pymysql://root:password@localhost:3306/bio_code_share')
+# 默认使用 SQLite，数据库文件存放在 instance 目录
+default_db_uri = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'bio_code_share.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', default_db_uri)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # 初始化扩展

@@ -1,0 +1,75 @@
+# ============================================================
+# Docker Hub 镜像部署配置
+# ============================================================
+# 使用方式：
+#   1. 下载此文件和 .env.example 到服务器
+#   2. 复制 .env.example 为 .env 并修改配置
+#   3. 运行: docker compose -f docker-compose.hub.yml up -d
+# ============================================================
+
+services:
+  # 应用服务（前端+后端一体化）
+  app:
+    image: wangjien/code-platform:latest
+    container_name: code-platform
+    ports:
+      - "8080:80"
+    environment:
+      # ===== 安全配置（必须修改）=====
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - SECRET_KEY=${SECRET_KEY:-}
+      
+      # ===== 数据库配置 =====
+      # SQLite（默认，适合小规模使用）
+      - DATABASE_URI=${DATABASE_URI:-sqlite:////app/backend/instance/bio_code_share.db}
+      
+      # ===== 缓存配置 =====
+      - REDIS_URL=redis://redis:6379/0
+      
+      # ===== 跨域配置 =====
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      
+      # ===== 管理员账户 =====
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    volumes:
+      # 数据持久化
+      - code_platform_data:/app/backend/instance
+      - code_platform_logs:/app/backend/logs
+    depends_on:
+      - redis
+    networks:
+      - code-platform-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: code-platform-redis
+    volumes:
+      - code_platform_redis:/data
+    networks:
+      - code-platform-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+# 数据卷
+volumes:
+  code_platform_data:
+    driver: local
+  code_platform_logs:
+    driver: local
+  code_platform_redis:
+    driver: local
+
+# 网络
+networks:
+  code-platform-network:
+    driver: bridge

@@ -12,7 +12,7 @@ services:
       # 基础配置
       - FLASK_ENV=production
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
-      - SECRET_KEY=${SECRET_KEY:-your-app-secret-key}
+      - SECRET_KEY=${SECRET_KEY:-your-app-secret-key} 
       
       # 数据库配置（选择其一）
       # SQLite（默认，适合小规模）

@@ -1,0 +1,140 @@
+# ============================================================
+# GitHub Actions: 自动构建并发布 Docker 镜像
+# ============================================================
+# 触发条件：
+#   - 推送 tag (v*.*.*)
+#   - 手动触发
+#   - 推送到 master/main 分支
+# 
+# 发布到：
+#   - Docker Hub: wangjien/code-platform
+#   - GitHub Container Registry: ghcr.io/wangjien/code-platform
+# ============================================================
+
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '镜像标签 (留空则使用 latest)'
+        required: false
+        default: ''
+
+env:
+  DOCKERHUB_REPO: wangjien/code-platform
+  GHCR_REPO: ghcr.io/wangjien/code-platform
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # 1. 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 设置 Node.js 环境（用于构建前端）
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # 3. 构建前端
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          echo "Frontend build completed"
+          ls -la dist/
+
+      # 4. 设置 Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 5. 登录 Docker Hub
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 6. 登录 GitHub Container Registry
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 7. 提取元数据（标签、版本等）
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.DOCKERHUB_REPO }}
+            ${{ env.GHCR_REPO }}
+          tags: |
+            # 手动输入的标签
+            type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event.inputs.tag != '' }}
+            # 语义化版本标签 (v1.0.0 -> 1.0.0, 1.0, 1)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # master/main 分支 -> latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
+            # 分支名
+            type=ref,event=branch
+            # PR 编号
+            type=ref,event=pr
+            # 短 SHA
+            type=sha,prefix=sha-
+
+      # 8. 构建并推送镜像
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      # 9. 输出镜像信息
+      - name: Image digest
+        run: |
+          echo "## 🐳 Docker 镜像构建完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 镜像标签" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 拉取命令" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.DOCKERHUB_REPO }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "# 或" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.GHCR_REPO }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

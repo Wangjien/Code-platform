@@ -1,6 +1,4 @@
-# <font color="red"> 数据库配置有些问题，我需要先修复一下_ 2026-01-26</font>
-
-# <font color="blue"> TODO: 录制部署视频, Docker部署时间还是很长。需要打包直接可用镜像</font>
+# <font color="blue"> TODO: 录制部署视频</font>
 
 
 # 代码分享平台
@@ -49,9 +47,114 @@
 
 ---
 
-## 快速部署 (Docker 方式)
+## 部署方式概览
 
-本节介绍如何在服务器上使用 Docker 快速部署应用。
+| 方式 | 难度 | 适用场景 | 说明 |
+|------|------|----------|------|
+| **Docker Hub 镜像** | ⭐ 最简单 | 快速体验、小团队 | 直接拉取预构建镜像，无需编译 |
+| **Docker 本地构建** | ⭐⭐ 简单 | 需要自定义修改 | 克隆代码后本地构建镜像 |
+| **直装部署** | ⭐⭐⭐ 中等 | 生产环境、完全控制 | 手动安装所有依赖 |
+
+---
+
+## 🚀 Docker Hub 镜像部署（推荐新手）
+
+类似 Nextcloud，直接拉取预构建镜像即可运行，**无需克隆代码、无需本地构建**。
+
+> 💡 镜像通过 GitHub Actions 自动构建，每次发布新版本时自动推送到 Docker Hub 和 GitHub Container Registry。
+
+**镜像地址：**
+- Docker Hub: `wangjien/code-platform`
+- GitHub Container Registry: `ghcr.io/wangjien/code-platform`
+
+### 一键部署（SQLite 版本）
+
+```bash
+# 1. 创建部署目录
+mkdir -p ~/code-platform && cd ~/code-platform
+
+# 2. 下载配置文件
+curl -O https://raw.githubusercontent.com/Wangjien/Code-platform/master/docker-compose.hub.yml
+curl -O https://raw.githubusercontent.com/Wangjien/Code-platform/master/.env.example
+
+# 3. 配置环境变量
+cp .env.example .env
+
+# 4. 修改必要配置（至少修改 JWT_SECRET_KEY）
+# 生成随机密钥: openssl rand -base64 32
+nano .env
+
+# 5. 启动服务
+docker compose -f docker-compose.hub.yml up -d
+
+# 6. 访问应用
+echo "访问: http://$(hostname -I | awk '{print $1}'):8080"
+```
+
+### 一键部署（MySQL 版本）
+
+```bash
+# 1. 创建部署目录
+mkdir -p ~/code-platform && cd ~/code-platform
+
+# 2. 下载 MySQL 版本配置文件
+curl -O https://raw.githubusercontent.com/Wangjien/Code-platform/master/docker-compose.hub.mysql.yml
+curl -O https://raw.githubusercontent.com/Wangjien/Code-platform/master/.env.example
+
+# 3. 配置环境变量
+cp .env.example .env
+nano .env  # 修改 JWT_SECRET_KEY 和 MySQL 密码
+
+# 4. 启动服务
+docker compose -f docker-compose.hub.mysql.yml up -d
+```
+
+### 配置说明
+
+编辑 `.env` 文件，**必须修改**以下配置：
+
+```bash
+# 安全密钥（必须修改！）
+JWT_SECRET_KEY=你的随机密钥  # 使用 openssl rand -base64 32 生成
+
+# 允许访问的域名/IP
+ALLOWED_ORIGINS=http://你的服务器IP:8080
+
+# 管理员账户（建议修改默认密码）
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=你的强密码
+```
+
+### 常用命令
+
+```bash
+# 查看运行状态
+docker compose -f docker-compose.hub.yml ps
+
+# 查看日志
+docker compose -f docker-compose.hub.yml logs -f
+
+# 停止服务
+docker compose -f docker-compose.hub.yml down
+
+# 更新到最新版本
+docker compose -f docker-compose.hub.yml pull
+docker compose -f docker-compose.hub.yml up -d
+```
+
+### 数据备份
+
+```bash
+# SQLite 数据库备份
+docker cp code-platform:/app/backend/instance/bio_code_share.db ./backup_$(date +%Y%m%d).db
+```
+
+---
+
+## 快速部署 (Docker 本地构建)
+
+本节介绍如何在服务器上使用 Docker 快速部署应用（需要克隆代码并本地构建镜像）。
 
 ### 环境要求
 
@@ -262,17 +365,344 @@ ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=你的强密码
 ```
 
-**首次使用：**
-1. 使用默认管理员账户登录
-2. 进入"管理后台"进行系统配置
-3. 修改默认密码
-4. 普通用户可通过"注册"创建新账户
+  **首次使用：**
+ 1. 使用默认管理员账户登录
+ 2. 进入"管理后台"进行系统配置
+ 3. 修改默认密码
+ 4. 普通用户可通过"注册"创建新账户
+ 
+ ---
 
----
+ ## 非 Docker 直装部署（Ubuntu 22.04 示例）
+ 
+ 本节适用于：你希望在服务器上直接安装依赖并运行服务（不使用 Docker）。
+ 
+ ### 环境要求
+ 
+ - Ubuntu 22.04（18.04+ 理论可行）
+ - Python 3.10+（建议使用系统自带 Python3）
+ - Nginx
+ - Redis
+ -（可选）MySQL
+ -（前端可选）Node.js：如果你选择在服务器上构建前端
+ 
+ ### 第一步：安装系统依赖
+ 
+ ```bash
+ sudo apt update
+ sudo apt install -y git nginx redis-server python3 python3-venv python3-pip
+ ```
+ 
+ 如果你打算使用 MySQL（可选）：
+ 
+ ```bash
+ sudo apt install -y mysql-server
+ sudo systemctl enable --now mysql
+ sudo systemctl status mysql --no-pager
+ ```
+ 
+ 初始化（建议执行）：
+ 
+ ```bash
+ sudo mysql_secure_installation
+ ```
+ 
+ 创建数据库与账号（示例）：
+ 
+ ```bash
+ sudo mysql -e "CREATE DATABASE IF NOT EXISTS bio_code_share DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+ sudo mysql -e "CREATE USER IF NOT EXISTS 'biocode'@'localhost' IDENTIFIED BY 'YourStrongPassword';"
+ sudo mysql -e "GRANT ALL PRIVILEGES ON bio_code_share.* TO 'biocode'@'localhost';"
+ sudo mysql -e "FLUSH PRIVILEGES;"
+ ```
+ 
+ （可选）如果你使用 Rocky/CentOS/RHEL 系：
+ 
+ ```bash
+ # 仅示例：不同系统源可能不同，请按你服务器实际情况选择合适的 MySQL 8 安装方式
+ # dnf -y module disable mysql
+ # dnf -y install mysql-server
+ # systemctl enable --now mysqld
+ ```
+ 
+ ### 第二步：拉取代码
+ 
+ 建议安装到 `/opt`：
+ 
+ ```bash
+ sudo mkdir -p /opt/code-platform
+ sudo chown -R $USER:$USER /opt/code-platform
+ cd /opt/code-platform
+ git clone https://github.com/Wangjien/Code-platform.git .
+ ```
+ 
+ ### 第三步：准备前端静态文件（2 选 1）
+ 
+ #### 方式 A：在服务器上构建（需要 Node.js）
+ 
+ 安装 Node.js（Ubuntu 22.04 示例，使用 NodeSource）：
+ 
+ ```bash
+ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+ sudo apt install -y nodejs
+ node -v
+ npm -v
+ ```
+ 
+ ```bash
+ cd /opt/code-platform/frontend
+ npm ci
+ npm run build
+ ```
+ 
+ 构建完成后产物在：`/opt/code-platform/frontend/dist`
+ 
+ #### 方式 B：在本地构建后上传（服务器不需要 Node.js）
+ 
+ 在你的电脑上：
+ 
+ ```bash
+ cd frontend
+ npm ci
+ npm run build
+ ```
+ 
+ 然后把 `frontend/dist` 整个目录上传到服务器的 `/opt/code-platform/frontend/dist`。
+ 
+ ### 第四步：配置后端 Python 环境
+ 
+ ```bash
+ cd /opt/code-platform/backend
+ python3 -m venv .venv
+ source .venv/bin/activate
+ pip install -U pip
+ pip install -r requirements.txt
+ ```
+ 
+ ### 第五步：配置环境变量（建议使用 .env）
+ 
+ ```bash
+ cp /opt/code-platform/.env.example /opt/code-platform/.env
+ ```
+ 
+ 重点配置项（SQLite 默认推荐）：
+ 
+ - `JWT_SECRET_KEY`：必须改成随机长字符串
+ - `ALLOWED_ORIGINS`：写你的访问地址（例如 `http://你的IP` 或 `https://你的域名`）
+ - `DATABASE_URI`：SQLite 推荐使用绝对路径，例如：
+ 
+ ```bash
+ DATABASE_URI=sqlite:////opt/code-platform/backend/instance/bio_code_share.db
+ ```
+ 
+ 并创建目录：
+ 
+ ```bash
+ mkdir -p /opt/code-platform/backend/instance /opt/code-platform/backend/logs
+ ```
+ 
+ 如果你使用 MySQL：把 `DATABASE_URI` 改为本机连接（示例）：
+ 
+ ```bash
+ DATABASE_URI=mysql+pymysql://biocode:YourStrongPassword@127.0.0.1:3306/bio_code_share
+ ```
+ 
+ 并确保已安装 MySQL 驱动依赖（通常已包含在 `requirements.txt`，如未包含请补充后重新安装依赖）。
+ 
+ 如果你使用远程 MySQL / 云数据库（RDS）（示例）：
+ 
+ ```bash
+ DATABASE_URI=mysql+pymysql://biocode:YourStrongPassword@your-mysql-host:3306/bio_code_share?charset=utf8mb4
+ ```
+ 
+ 远程 MySQL 安全建议：
+ 
+ - **只开放必要端口**：云安全组/防火墙只允许你的服务器 IP 访问 `3306`，不要全网开放。
+ - **最小权限账号**：避免用 `root` 连接应用；使用单独业务账号，仅授权 `bio_code_share.*`。
+ - **强密码与轮换**：使用强密码并定期轮换。
+ - **TLS**：生产环境优先启用 MySQL TLS（按云数据库指引配置证书）。
+ - **服务端 bind-address**：自建 MySQL 若需要远程连接，才配置 `bind-address`；否则保持仅本机监听更安全。
+ 
+ 自建 MySQL 远程账号示例（在 MySQL 内执行）：
+ 
+ ```sql
+ CREATE USER 'biocode'@'你的服务器公网IP' IDENTIFIED BY 'YourStrongPassword';
+ GRANT ALL PRIVILEGES ON bio_code_share.* TO 'biocode'@'你的服务器公网IP';
+ FLUSH PRIVILEGES;
+ ```
+ 
+ ### 第五点五步：初始化数据库（建表 / 初始化默认数据 / 创建管理员）
+ 
+ 在后端目录执行（SQLite/MySQL 都需要执行一次建表）：
+ 
+ ```bash
+ cd /opt/code-platform/backend
+ source .venv/bin/activate
+ python -c "from app import app, db;\nwith app.app_context():\n    db.create_all();\n    print('数据库表已创建')"
+ ```
+ 
+ 初始化默认分类与标签（可选，但建议执行）：
+ 
+ ```bash
+ python /opt/code-platform/backend/init_data.py
+ ```
+ 
+ 创建/提升管理员（可选；也可通过环境变量 `ADMIN_*` 配置后首次启动自动创建）：
+ 
+ ```bash
+ python /opt/code-platform/make_admin.py
+ ```
+ 
+ ### 第六步：使用 systemd 启动后端（Gunicorn）
+ 
+ 创建 systemd service 文件：
+ 
+ ```bash
+ sudo tee /etc/systemd/system/code-platform.service > /dev/null <<'EOF'
+ [Unit]
+ Description=Code Platform (Gunicorn)
+ After=network.target redis-server.service mysql.service
+ Wants=redis-server.service
+ 
+ [Service]
+ Type=simple
+ User=www-data
+ Group=www-data
+ WorkingDirectory=/opt/code-platform/backend
+ EnvironmentFile=/opt/code-platform/.env
+ Environment=PYTHONPATH=/opt/code-platform/backend
+ Environment=FLASK_DEBUG=0
+ ExecStart=/opt/code-platform/backend/.venv/bin/gunicorn \
+   -w 2 \
+   -b 127.0.0.1:5000 \
+   --access-logfile - \
+   --error-logfile - \
+   --timeout 120 \
+   app:app
+ Restart=always
+ RestartSec=3
+ TimeoutStartSec=30
+ 
+ # 更严格的系统权限（如遇到写入权限问题，可先注释这几行排查）
+ NoNewPrivileges=true
+ PrivateTmp=true
+ 
+ [Install]
+ WantedBy=multi-user.target
+ EOF
+ ```
+ 
+ 赋予目录权限（避免 www-data 无法写入 SQLite 数据库文件）：
+ 
+ ```bash
+ sudo chown -R www-data:www-data /opt/code-platform/backend/instance /opt/code-platform/backend/logs
+ ```
+ 
+ 启动服务：
+ 
+ ```bash
+ sudo systemctl daemon-reload
+ sudo systemctl enable --now code-platform
+ sudo systemctl status code-platform --no-pager
+ ```
+ 
+ 生产环境建议（可选）：
+ 
+ - **并发参数**：`-w`（worker 数）建议按 CPU 调整（通常 `CPU*2+1` 作为经验值），内存紧张可降低。
+ - **运行端口**：后端只监听 `127.0.0.1:5000`，通过 Nginx 对外提供访问。
+ - **日志**：当前配置将 Gunicorn 日志输出到 `journalctl`，便于统一运维。
+ - **依赖服务**：如果你不用 MySQL，可从 `After=` 中移除 `mysql.service`。
+ 
+ ### 第七步：配置 Nginx（静态前端 + /api 反代）
+ 
+ 创建站点配置：
+ 
+ ```bash
+ sudo tee /etc/nginx/sites-available/code-platform > /dev/null <<'EOF'
+ server {
+     listen 80;
+     server_name _;
+ 
+     root /opt/code-platform/frontend/dist;
+     index index.html;
+ 
+     location / {
+         try_files $uri $uri/ /index.html;
+     }
+ 
+     location /api/ {
+         proxy_pass http://127.0.0.1:5000/api/;
+         proxy_set_header Host $host;
+         proxy_set_header X-Real-IP $remote_addr;
+         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_set_header X-Forwarded-Proto $scheme;
+     }
+ 
+     location /health {
+         proxy_pass http://127.0.0.1:5000/health;
+     }
+ }
+ EOF
+ ```
+ 
+ 启用站点并重载：
+ 
+ ```bash
+ sudo ln -sf /etc/nginx/sites-available/code-platform /etc/nginx/sites-enabled/code-platform
+ sudo nginx -t
+ sudo systemctl reload nginx
+ ```
+ 
+ ### 第七点五步：配置 HTTPS（可选但推荐）
+ 
+ 前提：你已经有域名解析到服务器，并且 80/443 端口在安全组/防火墙放行。
+ 
+ 1) 安装 Certbot：
+ 
+ ```bash
+ sudo apt update
+ sudo apt install -y certbot python3-certbot-nginx
+ ```
+ 
+ 2) 申请证书并让 Certbot 自动修改 Nginx：
+ 
+ ```bash
+ sudo certbot --nginx -d your-domain.com
+ ```
+ 
+ 3) 验证自动续期：
+ 
+ ```bash
+ sudo certbot renew --dry-run
+ ```
+ 
+ 如果你不希望 Certbot 自动改配置，也可以让它只签发证书，然后手工把 Nginx `listen 443 ssl` 与证书路径配置进去。
+ 
+ ### 第八步：验证
+ 
+ ```bash
+ curl -i http://localhost/health
+ curl -i http://localhost/api/health
+ ```
+ 
+ 浏览器访问：
+ 
+ ```
+ http://你的服务器IP
+ ```
+ 
+ ### 常见问题排查
+ 
+ ```bash
+ sudo systemctl status code-platform --no-pager
+ sudo journalctl -u code-platform -n 200 --no-pager
+ sudo tail -n 200 /var/log/nginx/error.log
+ sudo nginx -t
+ ```
 
-## 常用运维命令
+ ## 常用运维命令
 
-### 服务管理
+ ### 服务管理
 
 ```bash
 # 启动所有服务
