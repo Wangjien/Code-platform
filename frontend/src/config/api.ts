@@ -12,8 +12,11 @@
  * http.get(API_CONFIG.endpoints.codeDetail(123))
  */
 export const API_CONFIG = {
-  // 从环境变量读取 API 基础地址，开发环境默认 localhost:5001
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
+  // 从环境变量读取 API 基础地址
+  // 生产环境使用空字符串（相对路径），开发环境使用 localhost:5001
+  baseURL: import.meta.env.VITE_API_BASE_URL !== undefined 
+    ? import.meta.env.VITE_API_BASE_URL 
+    : 'http://localhost:5001',
   
   // API 端点
   endpoints: {
