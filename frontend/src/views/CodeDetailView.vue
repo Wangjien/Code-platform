@@ -143,14 +143,47 @@
           </el-card>
         </div>
       </div>
+      
+      <!-- 上一篇/下一篇导航 -->
+      <div class="code-navigation">
+        <el-button 
+          v-if="prevCode" 
+          @click="goToCode(prevCode.id)"
+          class="nav-btn prev-btn"
+        >
+          <ChevronLeft :size="16" />
+          <div class="nav-info">
+            <span class="nav-label">上一篇</span>
+            <span class="nav-title">{{ prevCode.title }}</span>
+          </div>
+        </el-button>
+        <div v-else class="nav-placeholder"></div>
+        
+        <el-button type="primary" @click="goHome" class="home-btn">
+          <Home :size="16" /> 返回列表
+        </el-button>
+        
+        <el-button 
+          v-if="nextCode" 
+          @click="goToCode(nextCode.id)"
+          class="nav-btn next-btn"
+        >
+          <div class="nav-info">
+            <span class="nav-label">下一篇</span>
+            <span class="nav-title">{{ nextCode.title }}</span>
+          </div>
+          <ChevronRight :size="16" />
+        </el-button>
+        <div v-else class="nav-placeholder"></div>
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { Copy, Download, Star, ChevronDown } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { Copy, Download, Star, ChevronDown, ChevronLeft, ChevronRight, Home } from 'lucide-vue-next'
 import { exportSingleCode, ExportFormat } from '../utils/export'
 import loader from '@monaco-editor/loader'
 import * as echarts from 'echarts'
@@ -186,8 +219,47 @@ loader.config({
 })
 
 const route = useRoute()
-const codeId = Number(route.params.id)
+const router = useRouter()
+const codeId = ref(Number(route.params.id))
 const { loading, withLoading } = useLoading()
+
+// 上一篇/下一篇导航
+const prevCode = ref<{ id: number; title: string } | null>(null)
+const nextCode = ref<{ id: number; title: string } | null>(null)
+
+// 导航方法
+const goToCode = (id: number) => {
+  router.push(`/code/${id}`)
+}
+
+const goHome = () => {
+  router.push('/')
+}
+
+// 获取相邻代码
+const fetchAdjacentCodes = async () => {
+  try {
+    const response = await http.get(API_CONFIG.endpoints.codes, {
+      params: { per_page: 100 }
+    })
+    const codes = response.data.codes
+    const currentIndex = codes.findIndex((c: any) => c.id === codeId.value)
+    
+    if (currentIndex > 0) {
+      prevCode.value = { id: codes[currentIndex - 1].id, title: codes[currentIndex - 1].title }
+    } else {
+      prevCode.value = null
+    }
+    
+    if (currentIndex < codes.length - 1 && currentIndex >= 0) {
+      nextCode.value = { id: codes[currentIndex + 1].id, title: codes[currentIndex + 1].title }
+    } else {
+      nextCode.value = null
+    }
+  } catch (error) {
+    console.error('获取相邻代码失败:', error)
+  }
+}
 
 // 代码数据
 const code = ref<any>({
@@ -315,7 +387,7 @@ const handleSubmitComment = async () => {
   }
   
   await withLoading(async () => {
-    const response = await http.post(API_CONFIG.endpoints.codeComments(codeId), {
+    const response = await http.post(API_CONFIG.endpoints.codeComments(codeId.value), {
       content: newComment.value
     })
     
@@ -389,7 +461,7 @@ const initCharts = () => {
 // 获取代码详情
 const fetchCodeDetail = async () => {
   await withLoading(async () => {
-    const response = await http.get(API_CONFIG.endpoints.codeDetail(codeId))
+    const response = await http.get(API_CONFIG.endpoints.codeDetail(codeId.value))
     code.value = response.data
     
     // 初始化编辑器
@@ -408,7 +480,7 @@ const fetchCodeDetail = async () => {
 // 获取评论列表
 const fetchComments = async () => {
   try {
-    const response = await http.get(API_CONFIG.endpoints.codeComments(codeId))
+    const response = await http.get(API_CONFIG.endpoints.codeComments(codeId.value))
     comments.value = response.data
   } catch (error) {
     console.error('获取评论列表失败:', error)
@@ -420,11 +492,22 @@ onMounted(async () => {
   await initEditor()
   fetchCodeDetail()
   fetchComments()
+  fetchAdjacentCodes()
 })
 
 // 组件卸载时销毁编辑器
 onBeforeUnmount(() => {
   disposeEditor()
+})
+
+// 监听路由变化，重新加载数据
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    codeId.value = Number(newId)
+    fetchCodeDetail()
+    fetchComments()
+    fetchAdjacentCodes()
+  }
 })
 
 // 监听代码变化，更新编辑器内容
@@ -755,5 +838,87 @@ watch(() => code.value.content, (newContent) => {
   height: auto;
   border-radius: 4px;
   margin: 10px 0;
+}
+
+/* 上一篇/下一篇导航 */
+.code-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color, #e4e7ed);
+  gap: 16px;
+}
+
+.nav-btn {
+  flex: 1;
+  max-width: 300px;
+  height: auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  white-space: normal;
+}
+
+.nav-btn.prev-btn {
+  justify-content: flex-start;
+}
+
+.nav-btn.next-btn {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.nav-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.nav-label {
+  font-size: 12px;
+  color: var(--text-muted, #909399);
+}
+
+.nav-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #303133);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.nav-placeholder {
+  flex: 1;
+  max-width: 300px;
+}
+
+.home-btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .code-navigation {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .nav-btn,
+  .nav-placeholder {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .home-btn {
+    order: -1;
+    width: 100%;
+  }
 }
 </style>
