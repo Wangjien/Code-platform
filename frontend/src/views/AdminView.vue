@@ -207,8 +207,9 @@ const activeTab = ref<'users' | 'codes' | 'comments' | 'categories'>('users')
 
 // 日期格式化
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return ''
+  if (!dateStr) return '-'
   const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
