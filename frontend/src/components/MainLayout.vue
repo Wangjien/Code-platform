@@ -24,6 +24,14 @@
       </div>
       
       <div class="navbar-right">
+        <!-- 主题切换按钮 -->
+        <el-tooltip :content="isDark ? '切换到亮色模式' : '切换到暗色模式'">
+          <el-button circle @click="toggleTheme" class="theme-toggle-btn">
+            <Moon v-if="!isDark" :size="18" />
+            <Sun v-else :size="18" />
+          </el-button>
+        </el-tooltip>
+        
         <el-button type="primary" @click="handlePublish" :icon="Plus">
           发布代码
         </el-button>
@@ -208,8 +216,9 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   Search, Plus, User, ChevronDown, FileText, Star,
   LogOut, Home, Menu, BarChart, Clock, Maximize2, Minimize2,
-  BarChart2, Monitor, PieChart, Cpu, PenLine
+  BarChart2, Monitor, PieChart, Cpu, PenLine, Moon, Sun
 } from 'lucide-vue-next'
+import { useTheme } from '../composables/useTheme'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
@@ -233,6 +242,9 @@ import axios from 'axios'
 
 const router = useRouter()
 const route = useRoute()
+
+// 主题
+const { isDark, toggleTheme } = useTheme()
 
 // 状态
 const searchKeyword = ref('')

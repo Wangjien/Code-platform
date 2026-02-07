@@ -1,5 +1,5 @@
 <template>
-  <div class="home-container" v-loading="loading" element-loading-text="加载中...">
+  <div class="home-container">
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
@@ -117,8 +117,13 @@
       </div>
     </div>
     
+    <!-- 骨架屏加载状态 -->
+    <div class="code-grid" v-if="loading">
+      <SkeletonCard v-for="i in 6" :key="i" />
+    </div>
+    
     <!-- 代码列表 -->
-    <div class="code-grid" v-if="codes.length > 0">
+    <div class="code-grid" v-else-if="codes.length > 0">
       <div class="code-card" v-for="code in codes" :key="code.id" @click="handleCodeClick(code.id)">
         <div class="card-header">
           <div class="lang-badge" :class="code.language.toLowerCase()">
@@ -196,6 +201,7 @@ import { API_CONFIG } from '../config/api'
 import { cache, CACHE_KEYS, CACHE_TTL } from '../utils/cache'
 import { debounce } from '../utils/ui-helpers'
 import { Star, Eye, Clock, RotateCcw, User } from 'lucide-vue-next'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
 //======================================
 // Home View

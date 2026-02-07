@@ -1,0 +1,173 @@
+/* 主题变量定义 */
+
+:root {
+  /* 亮色模式 - 默认 */
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-sidebar: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  --bg-header: rgba(255, 255, 255, 0.95);
+  
+  --text-primary: #303133;
+  --text-secondary: #606266;
+  --text-muted: #909399;
+  --text-inverse: #ffffff;
+  
+  --border-color: #e4e7ed;
+  --border-light: #ebeef5;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  
+  --primary-color: #409eff;
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
+  --info-color: #909399;
+  
+  /* 代码编辑器 */
+  --editor-bg: #1e1e1e;
+  --editor-line-number: #858585;
+  
+  /* 过渡 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* 暗色模式 */
+:root.dark,
+[data-theme="dark"] {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: #21262d;
+  --bg-sidebar: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+  --bg-header: rgba(22, 27, 34, 0.95);
+  
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --text-inverse: #0d1117;
+  
+  --border-color: #30363d;
+  --border-light: #21262d;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  
+  --primary-color: #58a6ff;
+  --success-color: #3fb950;
+  --warning-color: #d29922;
+  --danger-color: #f85149;
+  --info-color: #8b949e;
+  
+  --editor-bg: #0d1117;
+  --editor-line-number: #6e7681;
+}
+
+/* 主题过渡动画 */
+html {
+  transition: background-color var(--transition-normal),
+              color var(--transition-normal);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Element Plus 暗色模式覆盖 */
+:root.dark {
+  --el-bg-color: var(--bg-secondary);
+  --el-bg-color-overlay: var(--bg-card);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-light);
+  --el-fill-color-blank: var(--bg-card);
+  --el-color-primary: var(--primary-color);
+}
+
+/* 卡片样式 */
+.el-card,
+.code-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+:root.dark .el-card,
+:root.dark .code-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+/* 输入框 */
+:root.dark .el-input__wrapper,
+:root.dark .el-textarea__inner {
+  background-color: var(--bg-secondary);
+  box-shadow: 0 0 0 1px var(--border-color) inset;
+}
+
+:root.dark .el-input__inner {
+  color: var(--text-primary);
+}
+
+/* 下拉菜单 */
+:root.dark .el-select-dropdown,
+:root.dark .el-dropdown-menu {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+:root.dark .el-select-dropdown__item {
+  color: var(--text-primary);
+}
+
+:root.dark .el-select-dropdown__item:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* 表格 */
+:root.dark .el-table {
+  --el-table-bg-color: var(--bg-card);
+  --el-table-tr-bg-color: var(--bg-card);
+  --el-table-header-bg-color: var(--bg-secondary);
+  --el-table-row-hover-bg-color: var(--bg-secondary);
+  --el-table-border-color: var(--border-color);
+}
+
+/* 对话框 */
+:root.dark .el-dialog {
+  background-color: var(--bg-card);
+}
+
+:root.dark .el-dialog__header {
+  border-bottom-color: var(--border-color);
+}
+
+/* 标签页 */
+:root.dark .el-tabs__item {
+  color: var(--text-secondary);
+}
+
+:root.dark .el-tabs__item.is-active {
+  color: var(--primary-color);
+}
+
+/* 分页 */
+:root.dark .el-pagination button,
+:root.dark .el-pager li {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+:root.dark .el-pager li:hover {
+  color: var(--primary-color);
+}
+
+/* 空状态 */
+:root.dark .el-empty__description {
+  color: var(--text-secondary);
+}

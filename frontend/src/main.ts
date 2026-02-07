@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import './style.css'
+import './styles/theme.css'
 import App from './App.vue'
+import { initTheme } from './composables/useTheme'
 
 //======================================
 // App Entry (Vite + Vue3)
@@ -32,6 +34,9 @@ const app = createApp(App)
 app.use(ElementPlus)
 app.use(router)
 app.use(pinia)
+
+// 初始化主题
+initTheme()
 
 // 挂载应用
 app.mount('#app')

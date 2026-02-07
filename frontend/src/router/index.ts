@@ -1,13 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+// 首页同步加载，其他页面懒加载以优化首屏性能
 import HomeView from '../views/HomeView.vue'
-import CodeDetailView from '../views/CodeDetailView.vue'
-import CodePublishView from '../views/CodePublishView.vue'
-import PublishModeSelect from '../views/PublishModeSelect.vue'
-import MarkdownPublishView from '../views/MarkdownPublishView.vue'
-import LoginView from '../views/LoginView.vue'
-import RegisterView from '../views/RegisterView.vue'
-import ProfileView from '../views/ProfileView.vue'
-import AdminView from '../views/AdminView.vue'
+
+// 懒加载组件 - 按需加载，减少首屏 bundle 大小
+const CodeDetailView = () => import('../views/CodeDetailView.vue')
+const CodePublishView = () => import('../views/CodePublishView.vue')
+const PublishModeSelect = () => import('../views/PublishModeSelect.vue')
+const MarkdownPublishView = () => import('../views/MarkdownPublishView.vue')
+const LoginView = () => import('../views/LoginView.vue')
+const RegisterView = () => import('../views/RegisterView.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
+const AdminView = () => import('../views/AdminView.vue')
 
 //======================================
 // Router
