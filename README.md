@@ -1,4 +1,4 @@
-# <font color="blue"> TODO: 录制部署视频</font>
+# <font color="blue"> TODO: Git action 打包成直接部署的镜像已经完成，还有些问题需要修改，暂时先不要部署</font>
 
 
 # 代码分享平台
